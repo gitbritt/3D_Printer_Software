@@ -1,0 +1,42 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "3DPrinterSim", "3DPrinterSim.csproj", "{4ACD40EA-504A-430E-950A-6902EF0ABB54}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Firmware", "..\Firmware\Firmware.csproj", "{95380E0B-DF03-42BB-8967-A8C8ED0F1BB6}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{E78E83F5-A3B3-4963-9002-1185D3EC9F0A}"
+	ProjectSection(SolutionItems) = preProject
+		..\Hardware\bin\Release\Hardware.dll = ..\Hardware\bin\Release\Hardware.dll
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "3DSimUnitTests", "..\3DSimUnitTests\3DSimUnitTests.csproj", "{54236361-1146-478D-A058-B317E80E774A}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{4ACD40EA-504A-430E-950A-6902EF0ABB54}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4ACD40EA-504A-430E-950A-6902EF0ABB54}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4ACD40EA-504A-430E-950A-6902EF0ABB54}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4ACD40EA-504A-430E-950A-6902EF0ABB54}.Release|Any CPU.Build.0 = Release|Any CPU
+		{95380E0B-DF03-42BB-8967-A8C8ED0F1BB6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{95380E0B-DF03-42BB-8967-A8C8ED0F1BB6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{95380E0B-DF03-42BB-8967-A8C8ED0F1BB6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{95380E0B-DF03-42BB-8967-A8C8ED0F1BB6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{54236361-1146-478D-A058-B317E80E774A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{54236361-1146-478D-A058-B317E80E774A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{54236361-1146-478D-A058-B317E80E774A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{54236361-1146-478D-A058-B317E80E774A}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {D5682722-8BA3-4166-814E-7C13EE8F00A7}
+	EndGlobalSection
+EndGlobal

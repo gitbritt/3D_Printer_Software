@@ -1,5 +1,11 @@
 # CPTR309-Team2
 
-Future documentation...
+## Sprint 1
+* Setup Github
+* Expand knowledge on C#
 
-Things That have Gotten done:
+## Sprint 2
+* Host-to-Firmware Communications Procedure
+* Firmware-to-Host Communications Procedure
+
+## Sprint 3

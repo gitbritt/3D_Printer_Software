@@ -7,5 +7,5 @@
 ## Sprint 2
 * Host-to-Firmware Communications Procedure
 * Firmware-to-Host Communications Procedure
-
+* Calculate Checksum
 ## Sprint 3

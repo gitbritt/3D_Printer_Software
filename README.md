@@ -17,11 +17,19 @@ Hello and welcome to our Software Enginerring team project. Over a three month p
 ### Sprint 2
 * Host-to-Firmware Communications Procedure
 * Firmware-to-Host Communications Procedure
-* Calculate Checksum
+* Calculate Checksum Functions
+* Read in GCode file to Program.cs
+* Determine future classes to implement into 3D Sim project
+  * GcodeLine()
+  * GcodeTemp()
+  * GcodeCmd()
+* Start Documentation
 * Weekly [backlogs](../master/Sprints/Sprint2-3_Status.png) and [burndown charts](../master/Sprints/Sprint2-3_BurnDown.png)
 
 ### Sprint 3
 * Testing of Communications Procedure
+* Complete Project
+* Complete Documentation
 * Weekly [backlogs](../master/Sprints/Sprint3-3_Status.png) and [burndown charts](../master/Sprints/Sprint3-3_BurnDown.png)
 
 ## License

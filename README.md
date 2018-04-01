@@ -12,17 +12,17 @@ Hello and welcome to our Software Enginerring team project. Over a three month p
 ### Sprint 1
 * Setup Github
 * Expand knowledge on C#
-* Weekly [backlogs](../master/Sprint1-2_Status) and [burndown charts](../master/Sprint1-2_BurnDown)
+* Weekly [backlogs](../master/Sprints/Sprint1-2_Status.png) and [burndown charts](../master/Sprints/Sprint1-2_BurnDown.png)
 
 ### Sprint 2
 * Host-to-Firmware Communications Procedure
 * Firmware-to-Host Communications Procedure
 * Calculate Checksum
-* Weekly [backlogs](../master/Sprint2-3_Status) and [burndown charts](../master/Sprint2-3_BurnDown)
+* Weekly [backlogs](../master/Sprints/Sprint2-3_Status.png) and [burndown charts](../master/Sprints/Sprint2-3_BurnDown.png)
 
 ### Sprint 3
 * Testing of Communications Procedure
-* Weekly [backlogs](../master/Sprint3-3_Status) and [burndown charts](../master/Sprint3-3_BurnDown)
+* Weekly [backlogs](../master/Sprints/Sprint3-3_Status.png) and [burndown charts](../master/Sprints/Sprint3-3_BurnDown.png)
 
 ## License
 This software is released under the terms of the GPL version 2 or (at your option) any later version. See [license](../master/LICENSE).

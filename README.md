@@ -1,16 +1,36 @@
-# CPTR309-Team2
+# CPTR-309 Team 2 Final Project
 
-Future documentation...
+## Welcome
+Hello and welcome to our Software Enginerring team project. Over a three month period we have been working on developing a 3D Simulated Printer that not only meets our class requirement, but will also assist in the future learning and comprehension of 3D printers to anyone who views this project. We look forward to see what more you do with this code in the future.
+— Southern Adventist University School of Computing CPTR-309 Team 2
 
-Documentation of the Changes of the code:
+## System Requirements
+* Windows 7 or higher
+* Visual Studio 2015 or higher
 
-	Added Test for Checksum
-		Created file named CommunicationFunction.cs
-			Class the calculates the checksum and returns it
-		Under UnitTest1.cs, Function named CalculateCheckSumTest was created for testing for checksum.
-		The test passed.
-		Adding more tests at the moment--
-		
-	-Created Several of the Charts for lab 3.
-	-Finished all Bust the last Charts
-	-
+## Sprints
+### Sprint 1
+* Setup Github
+* Expand knowledge on C#
+* Weekly [backlogs](../master/Sprints/Sprint1-2_Status.png) and [burndown charts](../master/Sprints/Sprint1-2_BurnDown.png)
+
+### Sprint 2
+* Host-to-Firmware Communications Procedure
+* Firmware-to-Host Communications Procedure
+* Calculate Checksum Functions
+* Read in GCode file to Program.cs
+* Determine future classes to implement into 3D Sim project
+  * GcodeLine()
+  * GcodeTemp()
+  * GcodeCmd()
+* Start Documentation
+* Weekly [backlogs](../master/Sprints/Sprint2-3_Status.png) and [burndown charts](../master/Sprints/Sprint2-3_BurnDown.png)
+
+### Sprint 3
+* Testing of Communications Procedure
+* Complete Project
+* Complete Documentation
+* Weekly [backlogs](../master/Sprints/Sprint3-3_Status.png) and [burndown charts](../master/Sprints/Sprint3-3_BurnDown.png)
+
+## License
+This software is released under the terms of the GPL version 2 or (at your option) any later version. See [license](../master/LICENSE).

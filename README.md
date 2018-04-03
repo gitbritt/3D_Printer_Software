@@ -11,6 +11,6 @@ Documentation of the Changes of the code:
 		The test passed.
 		Adding more tests at the moment--
 		
-	Created Several of the Charts for lab 3.
-	Finished all Bust the last Charts
-	
+	-Created Several of the Charts for lab 3.
+	-Finished all Bust the last Charts
+	-

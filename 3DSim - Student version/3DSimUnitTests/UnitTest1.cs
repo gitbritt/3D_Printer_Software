@@ -19,10 +19,10 @@ namespace _3DSimUnitTests
             byte[] paramBytes1 = new byte[] { 255, 255, 16, 14, 137 };
             //Act
             var returnedByte = _commHelper.CalculateChecksum(commandByte, paramBytes);
-            var returnedByte1 = _commHelper.CalculateChecksum(98, paramBytes1);
+            var returnedByte1 = _commHelper.CalculateChecksum(commandByte1, paramBytes1);
             //Assert
             Assert.AreEqual(27, returnedByte);
-            Assert.AreEqual(35 , returnedByte1);
+            Assert.AreEqual(7, returnedByte1);
         }
 
         //public void CalculateCommandWithCheckSum

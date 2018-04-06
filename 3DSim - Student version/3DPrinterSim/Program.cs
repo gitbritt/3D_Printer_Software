@@ -18,6 +18,17 @@ namespace PrinterSimulator
 {
     class PrintSim
     {
+        static void z_rail(PrinterControl printer)
+        {
+
+            //printer.MoveGalvos(67, 34);
+            //for (int i = 0; ; i++)
+            //    {
+                //printer.StepStepper(PrinterControl.StepperDir.STEP_DOWN);
+            //}
+           //printer.ResetStepper();
+
+        }
         static void SendHeader(PrinterControl printer, byte[] header)
         {
             var fooRcvd = new byte[4];
@@ -112,7 +123,7 @@ namespace PrinterSimulator
         static void PrintFile(PrinterControl simCtl)
         {
             System.IO.StreamReader file = new System.IO.StreamReader("..\\..\\..\\SampleSTLs\\F-35_Corrected.gcode");
-
+            
             Stopwatch swTimer = new Stopwatch();
             swTimer.Start();
 
@@ -186,6 +197,8 @@ namespace PrinterSimulator
             firmware.WaitForInit();
 
             SetForegroundWindow(ptr);
+
+            
 
             bool fDone = false;
             while (!fDone)

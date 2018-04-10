@@ -19,11 +19,13 @@ namespace Firmware
 
         public void z_rail_init(PrinterControl printer)   //Moves Galvos to the top
         {
+            var distance_steps = 40000;
             Console.WriteLine("Z init function called\n");
             printer.WaitMicroseconds(1000000);
             var printer_height = printer.GetPrinterHeight();
             var switch_pressed = printer.LimitSwitchPressed();
             var step_up = PrinterControl.StepperDir.STEP_UP;
+            var step_down = PrinterControl.StepperDir.STEP_DOWN;
             while (switch_pressed != true)
             {
                 //printer.ResetStepper();
@@ -34,9 +36,15 @@ namespace Firmware
                 {
                     Console.WriteLine("Limit switch pressed");
                 }
-                //printer.WaitMicroseconds(10000);
             }
             Console.WriteLine("At top of the printer. Press anything to move on.");
+            printer.WaitMicroseconds(1000000);
+            for(int i = 0; i != 40000; i++)
+            {
+                printer.WaitMicroseconds(7500);
+                printer.StepStepper(step_down);
+            }
+            Console.WriteLine("At build surface");
             Console.ReadKey();
             //return switch_pressed;
         }

@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio 15
+VisualStudioVersion = 15.0.27428.2027
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "3DPrinterSim", "3DPrinterSim.csproj", "{4ACD40EA-504A-430E-950A-6902EF0ABB54}"
 EndProject
@@ -10,6 +10,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{E78E83F5-A3B3-4963-9002-1185D3EC9F0A}"
 	ProjectSection(SolutionItems) = preProject
 		..\Hardware\bin\Release\Hardware.dll = ..\Hardware\bin\Release\Hardware.dll
+		ParseGCODE.cs = ParseGCODE.cs
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "3DSimUnitTests", "..\3DSimUnitTests\3DSimUnitTests.csproj", "{54236361-1146-478D-A058-B317E80E774A}"

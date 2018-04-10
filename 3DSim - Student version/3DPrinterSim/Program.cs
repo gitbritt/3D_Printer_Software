@@ -13,24 +13,16 @@ using System.Runtime.InteropServices;
 using System.Diagnostics;
 using Hardware;
 using Firmware;
+using ParseGCODE;
 
 namespace PrinterSimulator
 {
     class PrintSim
     {
-        static void z_rail(PrinterControl printer)
-        {
 
-            //printer.MoveGalvos(67, 34);
-            //for (int i = 0; ; i++)
-            //    {
-                //printer.StepStepper(PrinterControl.StepperDir.STEP_DOWN);
-            //}
-           //printer.ResetStepper();
-
-        }
         static void SendHeader(PrinterControl printer, byte[] header)
         {
+            
             var fooRcvd = new byte[4];
             var ACK = new byte[1] { 0xA5 };
             var NACK = new byte[1] { 0xFF };
@@ -122,8 +114,11 @@ namespace PrinterSimulator
 
         static void PrintFile(PrinterControl simCtl)
         {
-            System.IO.StreamReader file = new System.IO.StreamReader("..\\..\\..\\SampleSTLs\\F-35_Corrected.gcode");
             
+
+            System.IO.StreamReader file = new System.IO.StreamReader("..\\..\\..\\SampleSTLs\\F-35_Corrected.gcode");
+
+
             Stopwatch swTimer = new Stopwatch();
             swTimer.Start();
 
@@ -180,22 +175,22 @@ namespace PrinterSimulator
 
         static void Main()
         {
-
+            
             IntPtr ptr = GetConsoleWindow();
             MoveWindow(ptr, 0, 0, 1000, 400, true);
 
             // Start the printer - DO NOT CHANGE THESE LINES
+            
             PrinterThread printer = new PrinterThread();
             Thread oThread = new Thread(new ThreadStart(printer.Run));
             oThread.Start();
             printer.WaitForInit();
-
+            
             // Start the firmware thread - DO NOT CHANGE THESE LINES
             FirmwareController firmware = new FirmwareController(printer.GetPrinterSim());
             oThread = new Thread(new ThreadStart(firmware.Start));
             oThread.Start();
             firmware.WaitForInit();
-
             SetForegroundWindow(ptr);
 
             
@@ -209,11 +204,13 @@ namespace PrinterSimulator
                 Console.WriteLine("T - Test");
                 Console.WriteLine("Q - Quit");
 
+
                 char ch = Char.ToUpper(Console.ReadKey().KeyChar);
                 switch (ch)
                 {
                     case 'P': // Print
                         PrintFile(printer.GetPrinterSim());
+                        
                         break;
 
                     case 'T': // Test menu

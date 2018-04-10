@@ -1,10 +1,12 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Hardware;
+
+
 
 namespace Firmware
 {
@@ -14,6 +16,49 @@ namespace Firmware
         PrinterControl printer;
         bool fDone = false;
         bool fInitialized = false;
+
+        public void z_rail_init(PrinterControl printer)   //Moves Galvos to the top
+        {
+            Console.WriteLine("Z init function called\n");
+            printer.WaitMicroseconds(1000000);
+            var printer_height = printer.GetPrinterHeight();
+            var switch_pressed = printer.LimitSwitchPressed();
+            var step_up = PrinterControl.StepperDir.STEP_UP;
+            while (switch_pressed != true)
+            {
+                //printer.ResetStepper();
+                printer.StepStepper(step_up);
+                switch_pressed = printer.LimitSwitchPressed();
+                //printer.ResetStepper();
+                if (switch_pressed == true)
+                {
+                    Console.WriteLine("Limit switch pressed");
+                }
+                //printer.WaitMicroseconds(10000);
+            }
+            Console.WriteLine("At top of the printer. Press anything to move on.");
+            Console.ReadKey();
+            //return switch_pressed;
+        }
+        public void x_y_Laser()
+        {
+
+        }
+        //public void z_rails(float z)
+        //{
+        //    var z_rails_height = printer.GetPrinterHeight() - z;    //New Rails Height that is passed in from the GCODE file
+        //    var step_up = PrinterControl.StepperDir.STEP_UP;
+        //    var step_down = PrinterControl.StepperDir.STEP_DOWN;
+        //    z_rails_height = z_rails_height * 400;
+        //    for (int i = 0; i != z_rails_height; i++)
+        //    {
+        //        printer.StepStepper(step_down);
+        //        printer.ResetStepper();
+        //        printer.WaitMicroseconds(10);
+        //    }
+        //    Console.WriteLine("At correct z axis\n");
+        //}
+
 
         public FirmwareController(PrinterControl printer)
         {
@@ -34,6 +79,7 @@ namespace Firmware
                 {
                     bytesRead = printer.ReadSerialFromHost(foo1, 4);
                 }
+
                 //printer.WaitMicroseconds(10000);
                 printer.WriteSerialToHost(foo1, 4);
                 var AckByte = new byte[1];
@@ -90,16 +136,23 @@ namespace Firmware
         // Handle incoming commands from the serial link
         void Process()
         {
+            Console.WriteLine("Process is running\n");
+            //Z Rails
+            z_rail_init(printer);
+            var a = 40;//Testing code. Will delete a
+                       //if (pressed == true)
+                       //   z_rails(a);
+                       //Z Rails
 
             // Todo - receive incoming commands from the serial link and act on those commands by calling the low-level hardwarwe APIs, etc.
             var successBytes = new byte[] { 0x53, 0x55, 0x43, 0x43, 0x45, 0x53, 0x53, 0, 0, 0 };
             var timeoutBytes = new byte[] { 0x54, 0x49, 0x4d, 0x45, 0x4f, 0x55, 0x54, 0, 0, 0 };
             var checksumBytes = new byte[] { 0x43, 0x48, 0x45, 0x43, 0x4b, 0x53, 0x55, 0x4d, 0, 0 };
 
-                var foo1 = new byte[4];
-                byte ACK = 0xA5;
-                byte NACK = 0xFF;
-                byte ACKSuccess = 0x3F;
+            var foo1 = new byte[4];
+            byte ACK = 0xA5;
+            byte NACK = 0xFF;
+            byte ACKSuccess = 0x3F;
             while (!fDone)
             {
                 bool ACKRcvd = false;
@@ -141,7 +194,8 @@ namespace Firmware
                     if (foo1[1] == 2 && foo1[2] == 3)
                     {
                         printer.WriteSerialToHost(successBytes, 10);
-                    }else
+                    }
+                    else
                     {
                         printer.WriteSerialToFirmware(checksumBytes, 10);
                     }

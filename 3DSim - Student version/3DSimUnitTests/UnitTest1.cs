@@ -24,6 +24,11 @@ namespace _3DSimUnitTests
             Assert.AreEqual(27, returnedByte);
             Assert.AreEqual(7, returnedByte1);
         }
+        [TestMethod]
+        public void test_z_rail()
+        {
+
+        }
 
         //public void CalculateCommandWithCheckSum
 

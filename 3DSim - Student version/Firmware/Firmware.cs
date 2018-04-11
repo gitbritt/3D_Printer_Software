@@ -28,22 +28,34 @@ namespace Firmware
             var step_down = PrinterControl.StepperDir.STEP_DOWN;
             while (switch_pressed != true)
             {
-                //printer.ResetStepper();
                 printer.StepStepper(step_up);
                 switch_pressed = printer.LimitSwitchPressed();
-                //printer.ResetStepper();
                 if (switch_pressed == true)
                 {
                     Console.WriteLine("Limit switch pressed");
                 }
             }
-            Console.WriteLine("At top of the printer. Press anything to move on.");
             printer.WaitMicroseconds(1000000);
+            /*
+             Height = 100
+             speed = 40mm/sec
+             takes 2.5 sec to go distance
+             2.5 sec => Microseconds = 2500000
+             400 steps per mm. 400 * 100mm = 40,000 steps total
+             2,500,000/40,000 = 62.5 microsecond delay
+             accl = 4 mm/s => 4 mm/1,000,000 microseconds
+             1,000,000/40,000 = 25
+             */
+            var acclerate =62;
             for(int i = 0; i != 40000; i++)
             {
-                printer.WaitMicroseconds(7500);
+                printer.ResetStepper();
+                //acclerate = acclerate-25;
+                Console.WriteLine( i + " : Accleration : " + acclerate);
+                printer.WaitMicroseconds(acclerate);
                 printer.StepStepper(step_down);
             }
+            
             Console.WriteLine("At build surface");
             Console.ReadKey();
             //return switch_pressed;

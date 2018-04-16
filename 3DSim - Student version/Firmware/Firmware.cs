@@ -19,46 +19,41 @@ namespace Firmware
 
         public void z_rail_init(PrinterControl printer)   //Moves Galvos to the top
         {
-            var distance_steps = 40000;
+            
             Console.WriteLine("Z init function called\n");
             printer.WaitMicroseconds(1000000);
             var printer_height = printer.GetPrinterHeight();
             var switch_pressed = printer.LimitSwitchPressed();
             var step_up = PrinterControl.StepperDir.STEP_UP;
             var step_down = PrinterControl.StepperDir.STEP_DOWN;
+            var acclerate_up = 2500;
+            int i = 0;
+            int count = 1600;
             while (switch_pressed != true)
             {
-                printer.StepStepper(step_up);
+                i++;
+                if (printer.StepStepper(step_up) == false)
+                    printer.ResetStepper();
+                printer.WaitMicroseconds(acclerate_up);
                 switch_pressed = printer.LimitSwitchPressed();
                 if (switch_pressed == true)
-                {
                     Console.WriteLine("Limit switch pressed");
-                }
             }
-            printer.WaitMicroseconds(1000000);
-            /*
-             Height = 100
-             speed = 40mm/sec
-             takes 2.5 sec to go distance
-             2.5 sec => Microseconds = 2500000
-             400 steps per mm. 400 * 100mm = 40,000 steps total
-             2,500,000/40,000 = 62.5 microsecond delay
-             accl = 4 mm/s => 4 mm/1,000,000 microseconds
-             1,000,000/40,000 = 25
-             */
-            var acclerate =62;
-            for(int i = 0; i != 40000; i++)
+            
+            var acclerate_down = 2500;
+            for(i = 0; i != 40000; i++)
             {
-                printer.ResetStepper();
-                //acclerate = acclerate-25;
-                Console.WriteLine( i + " : Accleration : " + acclerate);
-                printer.WaitMicroseconds(acclerate);
-                printer.StepStepper(step_down);
+                acclerate_down = acclerate_down;
+                //Console.WriteLine(acclerate_down);
+                if (printer.StepStepper(step_down) == false)
+                    printer.ResetStepper();
+                printer.WaitMicroseconds(acclerate_down);
+                
             }
             
             Console.WriteLine("At build surface");
             Console.ReadKey();
-            //return switch_pressed;
+            
         }
         public void x_y_Laser()
         {

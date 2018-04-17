@@ -55,6 +55,35 @@ namespace Firmware
             Console.ReadKey();
             
         }
+
+        /// <summary>
+        /// Decreases the wait time before the stepper moves.
+        /// Returns the next amount of microseconds before the stepper moves again.
+        /// 400 steps/mm
+        /// max velocity 40 mm/s
+        /// max velocity 16000 steps/s^2
+        /// max acceleration 4 mm/s
+        /// max acceleration 1600 steps/s^2
+        /// 1/16000 s/step
+        /// 1/1600 s^2/step
+        /// </summary>
+        /// <param name="currentWaitTime"></param>
+        /// <returns></returns>
+        public int accelerate_wait_time(int currentWaitTimeMicroSeconds)
+        {
+            return currentWaitTimeMicroSeconds -= 625;
+        }
+        /// <summary>
+        /// Increases the wait time before stepper moves.
+        /// Returns the next amount of microseconds before the stepper moves again.
+        /// </summary>
+        /// <param name="currentWaitTimeMicroSeconds"></param>
+        /// <returns></returns>
+        public int decelerate_wait_time(int currentWaitTimeMicroSeconds)
+        {
+            return currentWaitTimeMicroSeconds += 625;
+        }
+
         public void x_y_Laser()
         {
 

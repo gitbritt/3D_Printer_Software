@@ -26,28 +26,28 @@ namespace Firmware
             var switch_pressed = printer.LimitSwitchPressed();
             var step_up = PrinterControl.StepperDir.STEP_UP;
             var step_down = PrinterControl.StepperDir.STEP_DOWN;
-            var acclerate_up = 2500;
-            int i = 0;
-            int count = 1600;
+            var delay = 625;
             while (switch_pressed != true)
             {
-                i++;
+                delay += 62;
+                delay = accelerate_wait_time(delay);
                 if (printer.StepStepper(step_up) == false)
                     printer.ResetStepper();
-                printer.WaitMicroseconds(acclerate_up);
+                printer.WaitMicroseconds(delay);
                 switch_pressed = printer.LimitSwitchPressed();
                 if (switch_pressed == true)
                     Console.WriteLine("Limit switch pressed");
             }
-            
-            var acclerate_down = 2500;
-            for(i = 0; i != 40000; i++)
+
+            delay = 625;
+            for(int i = 0; i != 40000; i++)
             {
-                acclerate_down = acclerate_down;
+                delay += 62;
+                delay = accelerate_wait_time(delay);
                 //Console.WriteLine(acclerate_down);
                 if (printer.StepStepper(step_down) == false)
                     printer.ResetStepper();
-                printer.WaitMicroseconds(acclerate_down);
+                printer.WaitMicroseconds(delay);
                 
             }
             
@@ -61,17 +61,29 @@ namespace Firmware
         /// Returns the next amount of microseconds before the stepper moves again.
         /// 400 steps/mm
         /// max velocity 40 mm/s
-        /// max velocity 16000 steps/s^2
-        /// max acceleration 4 mm/s
+        /// max velocity 16000 steps/s
+        /// max velocity 62.5 microseconds/step
+        /// min velocity 4 mm/x
+        /// min velocity 1600 steps/s
+        /// min velocity 625 microseconds/step
+        /// max acceleration 4 mm/s^2
         /// max acceleration 1600 steps/s^2
         /// 1/16000 s/step
         /// 1/1600 s^2/step
+        /// 1e6 microseconds/s
         /// </summary>
         /// <param name="currentWaitTime"></param>
         /// <returns></returns>
         public int accelerate_wait_time(int currentWaitTimeMicroSeconds)
         {
-            return currentWaitTimeMicroSeconds -= 625;
+            if (currentWaitTimeMicroSeconds < 63)
+            {
+                return 63;
+            }
+            else
+            {
+                return currentWaitTimeMicroSeconds -= 62;
+            }
         }
         /// <summary>
         /// Increases the wait time before stepper moves.
@@ -81,7 +93,11 @@ namespace Firmware
         /// <returns></returns>
         public int decelerate_wait_time(int currentWaitTimeMicroSeconds)
         {
-            return currentWaitTimeMicroSeconds += 625;
+            if (currentWaitTimeMicroSeconds > 625)
+            {
+                return 625;
+            }
+            return currentWaitTimeMicroSeconds += 62;
         }
 
         public void x_y_Laser()

@@ -18,68 +18,30 @@ namespace PrinterSimulator
 {
     class PrintSim
     {
-        static void SendHeader(PrinterControl printer, byte[] header)
+        static byte[] SendHeaderAndReceive(PrinterControl printer, byte[] header)
         {
+            Console.WriteLine("SendingHeader");
             var fooRcvd = new byte[4];
-            var ACK = new byte[1] { 0xA5 };
-            var NACK = new byte[1] { 0xFF };
-            byte succeededByte = 0x3F;
-            var ackSucceeded = new byte[1];
-            var headerSuccess = false;
+            int bytesRead = 0;
 
-            while (!headerSuccess)
+            do
             {
                 printer.WriteSerialToFirmware(header, 4);
-                printer.ReadSerialFromFirmware(fooRcvd, 4);
-
-                var correctHeader = true;
-                if (header.Length == fooRcvd.Length)
-                {
-                    for (int x = 0; x < header.Length; x++)
-                    {
-                        if (header[x] != fooRcvd[x])
-                        {
-                            correctHeader = false;
-                            break;
-                        }
-                    }
-                }
-                else
-                {
-                    correctHeader = false;
-                }
-                if (correctHeader)
-                {
-                    printer.WriteSerialToFirmware(ACK, 1);
-                }
-                else
-                {
-                    printer.WriteSerialToFirmware(NACK, 1);
-                }
-                while (ackSucceeded[0] != succeededByte && ackSucceeded[0] != Convert.ToByte(0x1F))
-                {
-                    printer.ReadSerialFromFirmware(ackSucceeded, 1);
-                }
-                if (ackSucceeded[0] == succeededByte)
-                    headerSuccess = true;
-                ackSucceeded[0] = 0;
-            }
-        }
-
-        static void SendPacket(PrinterControl printer, byte[] fooBody)
-        {
-            printer.WriteSerialToFirmware(fooBody, fooBody.Length);
+                bytesRead = printer.ReadSerialFromFirmware(fooRcvd, 4);
+            } while (bytesRead < 1);
+            return fooRcvd;
         }
 
         static bool WaitForResponse(PrinterControl printer)
         {
+            Console.WriteLine("HostWaitResponse");
             var responseRcvd = false;
             var responseArray = new byte[10];
             var successBytes = new byte[] { 0x53, 0x55, 0x43, 0x43, 0x45, 0x53, 0x53, 0, 0, 0 };
             while (!responseRcvd)
             {
                 var readResponse = printer.ReadSerialFromFirmware(responseArray, 10);
-                if (readResponse > 0)
+                if (readResponse == 10)
                 {
                     responseRcvd = true;
                 }
@@ -113,38 +75,50 @@ namespace PrinterSimulator
         {
             System.IO.StreamReader file = new System.IO.StreamReader("..\\..\\..\\SampleSTLs\\F-35_Corrected.gcode");
 
+            byte[] ACK = new byte[1] { 0xA5 };
+            byte[] NACK = new byte[1] { 0xFF };
+            var complete = false;
+            var commandPkt = new byte[4];
+            var header = new byte[4];
             Stopwatch swTimer = new Stopwatch();
             swTimer.Start();
 
-            var successBytes = new byte[] { 0x53, 0x55, 0x43, 0x43, 0x45, 0x53, 0x53, 0, 0, 0 };
-            var complete = false;
-            var foo = new byte[4];
 
-            foo = new byte[] { 1, 2, 3, 2, 1, 1 };
-            var fooHead = new byte[4];
+            commandPkt = new byte[] { 5, 2, 3, 2, 1, 1 };
             for (int i = 0; i < 4; i++)
             {
-                fooHead[i] = foo[i];
+                header[i] = commandPkt[i];
             }
-            var fooBodyLength = Convert.ToInt32(foo[3]);
-            var fooBody = new byte[fooBodyLength];
-            for (int x = 0; x < fooBodyLength; x++)
+            var paramDataLen = Convert.ToInt32(commandPkt[1]);
+            var commandParam = new byte[paramDataLen];
+            for (int x = 0; x < paramDataLen; x++)
             {
-                fooBody[x] = foo[x + 4];
+                commandParam[x] = commandPkt[x + 4];
             }
 
-            while (!complete)
+            do
             {
-                SendHeader(simCtl, fooHead);
-                simCtl.WriteSerialToFirmware(fooBody, fooBody.Length);
-                complete = WaitForResponse(simCtl);
-                if (complete)
+                var rcvHeader = SendHeaderAndReceive(simCtl, header);
+                bool correctHeader = ByteArraysEquals(header, rcvHeader);
+                if (!correctHeader)
                 {
-                    Console.WriteLine("Success");
+                    Console.WriteLine("Sending NACK");
+                    simCtl.WriteSerialToFirmware(NACK, 1);
                 }
-            }
+                else
+                {
+                    Console.WriteLine("Sending ACK");
+                    simCtl.WriteSerialToFirmware(ACK, 1);
+                    simCtl.WriteSerialToFirmware(commandParam, commandParam.Length);
+                    complete = WaitForResponse(simCtl);
+                    if (complete)
+                    {
+                        Console.WriteLine("Success");
+                    }
+                }
+            } while (complete == false);
 
-            
+
 
             swTimer.Stop();
             long elapsedMS = swTimer.ElapsedMilliseconds;
@@ -154,7 +128,19 @@ namespace PrinterSimulator
             Console.ReadKey();
         }
 
-        
+        static bool ByteArraysEquals(byte[] header, byte[] rcvHeader)
+        {
+            if (header.Length == rcvHeader.Length)
+            {
+                for (int i = 0; i < header.Length; i++)
+                {
+                    if (header[i] != rcvHeader[i])
+                        return false;
+                }
+                return true;
+            }
+            return false;
+        }
 
         [STAThread]
 

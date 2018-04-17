@@ -14,68 +14,27 @@ namespace Firmware
         PrinterControl printer;
         bool fDone = false;
         bool fInitialized = false;
+        byte[] successBytes = new byte[] { 0x53, 0x55, 0x43, 0x43, 0x45, 0x53, 0x53, 0, 0, 0 };
+        byte[] timeoutBytes = new byte[] { 0x54, 0x49, 0x4d, 0x45, 0x4f, 0x55, 0x54, 0, 0, 0 };
+        byte[] checksumBytes = new byte[] { 0x43, 0x48, 0x45, 0x43, 0x4b, 0x53, 0x55, 0x4d, 0, 0 };
 
         public FirmwareController(PrinterControl printer)
         {
             this.printer = printer;
         }
 
-        void ReceiveHeader(PrinterControl printer, int restByteParam)
+        void ReceiveHeaderAndSend(byte[] headerReceived)
         {
-            var foo1 = new byte[4];
-            byte ACK = 0xA5;
-            byte NACK = 0xFF;
-            byte ACKSuccess = 0x3F;
-            bool ACKRcvd = false;
-            while (!ACKRcvd)
+            //var headerReceived = new byte[4];
+            int bytesRead = 0;
+            while (bytesRead < 1)
             {
-                int bytesRead = 0;
-                while (bytesRead != 4)
-                {
-                    bytesRead = printer.ReadSerialFromHost(foo1, 4);
-                }
-                //printer.WaitMicroseconds(10000);
-                printer.WriteSerialToHost(foo1, 4);
-                var AckByte = new byte[1];
-                printer.WaitMicroseconds(10000);
-                while (AckByte[0] == 0)
-                {
-                    printer.ReadSerialFromHost(AckByte, 1);
-                }
-                if (AckByte[0] == ACK)
-                {
-                    printer.WriteSerialToHost(new byte[1] { ACKSuccess }, 1);
-                    ACKRcvd = true;
-                    Console.WriteLine("ACK rcvd");
-                }
-                else if (AckByte[0] == NACK)
-                {
-                    printer.WriteSerialToHost(new byte[1] { 0x1F }, 1);
-                    Console.WriteLine("NACK rcvd");
-                }
+                bytesRead = printer.ReadSerialFromHost(headerReceived, 4);
             }
-            restByteParam = Convert.ToInt32(foo1[3]);
+            //printer.WaitMicroseconds(10000);
+            printer.WriteSerialToHost(headerReceived, 4);
         }
 
-        void ReceivePacket(PrinterControl printer, int restByteParam)
-        {
-            var rcvdPacket = new byte[restByteParam];
-            var blah = 0;
-            while (blah != 0)
-            {
-                blah = printer.ReadSerialFromHost(rcvdPacket, restByteParam);
-            }
-            if (blah != restByteParam && blah != 0 && restByteParam != 0)
-            {
-                Console.WriteLine("Did not work...");
-            }
-            else
-            {
-                Console.WriteLine("Blah: " + blah);
-                Console.WriteLine("restByte: " + restByteParam);
-                Console.WriteLine("Works!");
-            }
-        }
 
         public int CalculateChecksum(byte commandByte, byte[] paramByte)
         {
@@ -92,64 +51,65 @@ namespace Firmware
         {
 
             // Todo - receive incoming commands from the serial link and act on those commands by calling the low-level hardwarwe APIs, etc.
-            var successBytes = new byte[] { 0x53, 0x55, 0x43, 0x43, 0x45, 0x53, 0x53, 0, 0, 0 };
-            var timeoutBytes = new byte[] { 0x54, 0x49, 0x4d, 0x45, 0x4f, 0x55, 0x54, 0, 0, 0 };
-            var checksumBytes = new byte[] { 0x43, 0x48, 0x45, 0x43, 0x4b, 0x53, 0x55, 0x4d, 0, 0 };
 
-                var foo1 = new byte[4];
-                byte ACK = 0xA5;
-                byte NACK = 0xFF;
-                byte ACKSuccess = 0x3F;
+
+            var receivedHeader = new byte[4];
+            var ACKorNACK = new byte[1];
+            byte ACK = 0xA5;
+            byte NACK = 0xFF;
             while (!fDone)
             {
-                bool ACKRcvd = false;
-                while (!ACKRcvd)
+                ReceiveHeaderAndSend(receivedHeader);
+                //printer.WaitMicroseconds(5000);
+                var ackBytesRead = 0;
+                while (ACKorNACK[0] != ACK && ACKorNACK[0] != NACK)
                 {
-                    int bytesRead = 0;
-                    while (bytesRead != 4)
-                    {
-                        bytesRead = printer.ReadSerialFromHost(foo1, 4);
-                    }
-                    //printer.WaitMicroseconds(10000);
-                    printer.WriteSerialToHost(foo1, 4);
-                    var AckByte = new byte[1];
-                    printer.WaitMicroseconds(10000);
-                    while (AckByte[0] == 0)
-                    {
-                        printer.ReadSerialFromHost(AckByte, 1);
-                    }
-                    if (AckByte[0] == ACK)
-                    {
-                        printer.WriteSerialToHost(new byte[1] { ACKSuccess }, 1);
-                        ACKRcvd = true;
-                    }
-                    else if (AckByte[0] == NACK)
-                    {
-                        printer.WriteSerialToHost(new byte[1] { 0x1F }, 1);
-                    }
+                    Console.WriteLine(Convert.ToInt32(ACKorNACK[0]) + " ACK or NACK");
+                    ackBytesRead = printer.ReadSerialFromHost(ACKorNACK, 1);
                 }
-                var restByteParam = Convert.ToInt32(foo1[3]);
-                printer.WaitMicroseconds(10000);
-                var restPacket = new byte[restByteParam];
-                var bytesPacketRead = printer.ReadSerialFromHost(restPacket, restByteParam);
-                if (restByteParam != bytesPacketRead)
+                //printer.ReadSerialFromHost(ACKorNACK, 1);
+                var headerResponse = ACKorNACK[0];
+                //byte headerResponse = ReadHeaderResponse(printer);
+                if (headerResponse == ACK)
                 {
-                    printer.WriteSerialToHost(timeoutBytes, 10);
+                    byte[] readParamByte = ReadParamBytes(receivedHeader);
+                    printer.WriteSerialToHost(readParamByte, 10);
                 }
-                else
-                {
-                    if (foo1[1] == 2 && foo1[2] == 3)
-                    {
-                        printer.WriteSerialToHost(successBytes, 10);
-                    }else
-                    {
-                        printer.WriteSerialToFirmware(checksumBytes, 10);
-                    }
-                }
-                //ReceivePacket(printer, restByteParam);
             }
         }
 
+        byte[] ReadParamBytes(byte[] header)
+        {
+            var paramBytes = new byte[header[1]];
+            var paramBytesRead = printer.ReadSerialFromHost(paramBytes, header[1]);
+            if (paramBytesRead != header[1])
+            {
+                return timeoutBytes;
+            }
+            else
+            {
+                if (header[2] == 3 && header[3] == 2)
+                {
+                    return successBytes;
+                }
+                else
+                {
+                    return checksumBytes;
+                }
+            }
+
+        }
+
+        byte ReadHeaderResponse()
+        {
+            var headerResponse = new byte[4];
+            var bytesRead = 0;
+            do
+            {
+                bytesRead = printer.ReadSerialFromHost(headerResponse, 4);
+            } while (bytesRead < 1);
+            return headerResponse[0];
+        }
 
         public void Start()
         {

@@ -27,6 +27,17 @@ Hello and welcome to our Software Enginerring team project. Over a three month p
 * Weekly [backlogs](../master/Sprints/Sprint2-3_Status.png) and [burndown charts](../master/Sprints/Sprint2-3_BurnDown.png)
 
 ### Sprint 3
+* Implement Firmware Commands and Calling Low-level APIs in Firmware
+  * Implement Calling StepStepper
+  * Implement Calling ResetStepper
+  * Implement RemoveModelFromPrinter
+  * Implement Calling SetLaser
+  * Implement Calling MoveGalvos
+* Z-Rail Controller
+  * Limit Switch
+  * Stepper Motor Speed
+  * Incorporate Integration
+* Integrate Communications Protocol
 * Testing of Communications Procedure
 * Complete Project
 * Complete Documentation

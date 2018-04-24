@@ -16,6 +16,9 @@ namespace Firmware
         PrinterControl printer;
         bool fDone = false;
         bool fInitialized = false;
+        static int minStepsPerSec = 16000;
+        static int maxStepsPerSec = 160000;
+        static int maxStepperSpeed = 10; //Because the max amount of times the stepper can accelerate is 10 times
 
         public void z_rail_init(PrinterControl printer)   //Moves Galvos to the top
         {
@@ -26,29 +29,39 @@ namespace Firmware
             var switch_pressed = printer.LimitSwitchPressed();
             var step_up = PrinterControl.StepperDir.STEP_UP;
             var step_down = PrinterControl.StepperDir.STEP_DOWN;
-            var delay = 625;
+            var delay = 0;
+            var stepperSpeed = 1;
+            var totalDelay = 0; //Too keep track of the number of uS before increasing speed.
             while (switch_pressed != true)
             {
-                delay += 62;
-                delay = accelerate_wait_time(delay);
-                if (printer.StepStepper(step_up) == false)
-                    printer.ResetStepper();
+                totalDelay += delay;
+                if (totalDelay >= 1000000)
+                {
+                    stepperSpeed = IncreaseStepperSpeed(stepperSpeed);
+                    totalDelay = 0;
+                }
+                delay = CalculateStepperDelay(stepperSpeed);
                 printer.WaitMicroseconds(delay);
+                printer.StepStepper(step_up);
                 switch_pressed = printer.LimitSwitchPressed();
                 if (switch_pressed == true)
                     Console.WriteLine("Limit switch pressed");
             }
 
-            delay = 625;
+            //Reset delay and stepperSpeed
+            delay = 0;
+            totalDelay = 0;
+            stepperSpeed = 1;
             for(int i = 0; i != 40000; i++)
             {
-                delay += 62;
-                delay = accelerate_wait_time(delay);
-                //Console.WriteLine(acclerate_down);
-                if (printer.StepStepper(step_down) == false)
-                    printer.ResetStepper();
+                totalDelay += delay;
+                if (totalDelay >= 1000000) {
+                    stepperSpeed = IncreaseStepperSpeed(stepperSpeed);
+                    totalDelay = 0;
+                }
+                delay = CalculateStepperDelay(stepperSpeed);
                 printer.WaitMicroseconds(delay);
-                
+                printer.StepStepper(step_down);
             }
             
             Console.WriteLine("At build surface");
@@ -74,30 +87,25 @@ namespace Firmware
         /// </summary>
         /// <param name="currentWaitTime"></param>
         /// <returns></returns>
-        public int accelerate_wait_time(int currentWaitTimeMicroSeconds)
+        public int CalculateStepperDelay(int stepperSpeed)
         {
-            if (currentWaitTimeMicroSeconds < 63)
-            {
-                return 63;
-            }
-            else
-            {
-                return currentWaitTimeMicroSeconds -= 62;
-            }
+            double secondsPerStep = 1.0 / (minStepsPerSec * stepperSpeed);
+            var delay = 10000000 * secondsPerStep;
+            return Convert.ToInt32(delay);
         }
+        
         /// <summary>
-        /// Increases the wait time before stepper moves.
-        /// Returns the next amount of microseconds before the stepper moves again.
+        /// Increases the stepper speed
         /// </summary>
-        /// <param name="currentWaitTimeMicroSeconds"></param>
+        /// <param name="stepperSpeed"></param>
         /// <returns></returns>
-        public int decelerate_wait_time(int currentWaitTimeMicroSeconds)
+        public int IncreaseStepperSpeed(int stepperSpeed)
         {
-            if (currentWaitTimeMicroSeconds > 625)
+            if (stepperSpeed < 10 && stepperSpeed >= 0)
             {
-                return 625;
+                stepperSpeed += 1;
             }
-            return currentWaitTimeMicroSeconds += 62;
+            return stepperSpeed;
         }
 
         public void x_y_Laser()
@@ -198,6 +206,7 @@ namespace Firmware
         {
             Console.WriteLine("Process is running\n");
             //Z Rails
+            printer.ResetStepper();
             z_rail_init(printer);
             var a = 40;//Testing code. Will delete a
                        //if (pressed == true)

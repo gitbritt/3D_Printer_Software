@@ -73,7 +73,7 @@ namespace PrinterSimulator
             }
             var checksumBytes = new byte[2];
             checksumBytes[1] = Convert.ToByte(commandByteInFunc >> 4);
-            checksumBytes[0] = Convert.ToByte((commandByteInFunc << 4) >> 4);
+            checksumBytes[0] = Convert.ToByte((commandByteInFunc << 4) >> 8);
 
             return checksumBytes;
         }

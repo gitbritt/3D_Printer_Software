@@ -31,20 +31,26 @@ namespace Firmware
             {
                 bytesRead = printer.ReadSerialFromHost(headerReceived, 4);
             }
-            Console.WriteLine("HeaderBytesRead: " + bytesRead);
+            //Console.WriteLine("HeaderBytesRead: " + bytesRead);
             //printer.WaitMicroseconds(10000);
             printer.WriteSerialToHost(headerReceived, 4);
         }
 
 
-        public int CalculateChecksum(byte commandByte, byte[] paramByte)
+        public byte[] CalculateChecksum(byte[] header, byte[] paramBytes)
         {
-            var commandByteInFunc = commandByte;
-            foreach (byte b in paramByte)
+            ushort commandByteInFunc = 0;
+            commandByteInFunc += Convert.ToUInt16(header[0]);
+            commandByteInFunc += Convert.ToUInt16(header[1]);
+            foreach (byte b in paramBytes)
             {
-                commandByteInFunc += b;
+                commandByteInFunc += Convert.ToUInt16(b);
             }
-            return commandByteInFunc;
+            var checksumBytes = new byte[2];
+            checksumBytes[1] = Convert.ToByte(commandByteInFunc >> 4);
+            checksumBytes[0] = Convert.ToByte((commandByteInFunc << 4) >> 4);
+
+            return checksumBytes;
         }
 
         // Handle incoming commands from the serial link
@@ -66,14 +72,15 @@ namespace Firmware
                 while (ACKorNACK[0] != ACK && ACKorNACK[0] != NACK)
                 {
                     ackBytesRead = printer.ReadSerialFromHost(ACKorNACK, 1);
-                    Console.WriteLine(Convert.ToInt32(ACKorNACK[0]) + " ACK or NACK");
+                    //Console.WriteLine(Convert.ToInt32(ACKorNACK[0]) + " ACK or NACK");
                 }
                 //printer.ReadSerialFromHost(ACKorNACK, 1);
                 //var headerResponse = ACKorNACK[0];
                 //byte headerResponse = ReadHeaderResponse(printer);
                 if (ACKorNACK[0] == ACK)
                 {
-                    Console.WriteLine("Checksum (low, high): (" + receivedHeader[2] + ", " + receivedHeader[3] + ")");
+                    //Console.WriteLine("Checksum (low, high): (" + receivedHeader[2] + ", " + receivedHeader[3] + ")");
+                    printer.WaitMicroseconds(10000);
                     byte[] readParamByte = ReadParamBytes(receivedHeader);
                     printer.WriteSerialToHost(readParamByte, 10);
                 }
@@ -90,7 +97,9 @@ namespace Firmware
             }
             else
             {
-                if (header[2] == 3 && header[3] == 2)
+                var calculatedChecksum = CalculateChecksum(header, paramBytes);
+                //Console.WriteLine("Checksum (low, high): (" + calculatedChecksum[0] + ", " + calculatedChecksum[1] + ")");
+                if (header[2] == calculatedChecksum[0] && header[3] == calculatedChecksum[1])
                 {
                     return successBytes;
                 }

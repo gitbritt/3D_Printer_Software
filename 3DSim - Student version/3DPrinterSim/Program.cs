@@ -24,7 +24,7 @@ namespace PrinterSimulator
             var fooRcvd = new byte[4];
             int bytesRead = 0;
 
-                printer.WriteSerialToFirmware(header, 4);
+            printer.WriteSerialToFirmware(header, 4);
             do
             {
                 bytesRead = printer.ReadSerialFromFirmware(fooRcvd, 4);
@@ -34,7 +34,7 @@ namespace PrinterSimulator
 
         static bool WaitForResponse(PrinterControl printer)
         {
-            Console.WriteLine("HostWaitResponse");
+            //Console.WriteLine("HostWaitResponse");
             var responseRcvd = false;
             var responseArray = new byte[10];
             var successBytes = new byte[] { 0x53, 0x55, 0x43, 0x43, 0x45, 0x53, 0x53, 0, 0, 0 };
@@ -43,7 +43,7 @@ namespace PrinterSimulator
                 var readResponse = printer.ReadSerialFromFirmware(responseArray, 10);
                 if (readResponse == 10)
                 {
-                    Console.WriteLine("Host done waiting: " + responseArray[0]);
+                    //Console.WriteLine("Host done waiting: " + responseArray[0]);
                     responseRcvd = true;
                 }
             }
@@ -62,14 +62,20 @@ namespace PrinterSimulator
 
         }
 
-        public int CalculateChecksum(byte commandByte, byte[] paramByte)
+        static byte[] CalculateChecksum(byte[] header, byte[] paramBytes)
         {
-            var commandByteInFunc = commandByte;
-            foreach (byte b in paramByte)
+            ushort commandByteInFunc = 0;
+            commandByteInFunc += Convert.ToUInt16(header[0]);
+            commandByteInFunc += Convert.ToUInt16(header[1]);
+            foreach (byte b in paramBytes)
             {
-                commandByteInFunc += b;
+                commandByteInFunc += Convert.ToUInt16(b);
             }
-            return commandByteInFunc;
+            var checksumBytes = new byte[2];
+            checksumBytes[1] = Convert.ToByte(commandByteInFunc >> 4);
+            checksumBytes[0] = Convert.ToByte((commandByteInFunc << 4) >> 4);
+
+            return checksumBytes;
         }
 
         static void PrintFile(PrinterControl simCtl)
@@ -85,26 +91,28 @@ namespace PrinterSimulator
             swTimer.Start();
 
 
-            var commandPkt = new byte[] { 5, 2, 3, 2, 1, 1 };
+            var commandPkt = new byte[] { 5, 2, 0, 0, 1, 1 };
 
             do
             {
-            for (int i = 0; i < 4; i++)
-            {
-                header[i] = commandPkt[i];
-            }
-            var paramDataLen = Convert.ToInt32(commandPkt[1]);
-            var commandParam = new byte[paramDataLen];
-            for (int x = 0; x < paramDataLen; x++)
-            {
-                commandParam[x] = commandPkt[x + 4];
-            }
-                var tempHeader = header;
-                Console.WriteLine(tempHeader[0] + tempHeader[1] + tempHeader[2] + tempHeader[3]);
-                var rcvHeader = SendHeaderAndReceive(simCtl, tempHeader);
-                if (ByteArraysEquals(tempHeader, rcvHeader))
+                for (int i = 0; i < 4; i++)
                 {
-                    Console.WriteLine("Sending ACK");
+                    header[i] = commandPkt[i];
+                }
+                var paramDataLen = Convert.ToInt32(commandPkt[1]);
+                var commandParam = new byte[paramDataLen];
+                for (int x = 0; x < paramDataLen; x++)
+                {
+                    commandParam[x] = commandPkt[x + 4];
+                }
+                var checksumBytes = CalculateChecksum((byte[])header, commandParam);
+                header[2] = checksumBytes[0];
+                header[3] = checksumBytes[1];
+                //Console.WriteLine((int)(header[0] + header[1] + header[2] + header[3]));
+                var rcvHeader = SendHeaderAndReceive(simCtl, header);
+                if (ByteArraysEquals(header, rcvHeader))
+                {
+                    //Console.WriteLine("Sending ACK");
                     simCtl.WriteSerialToFirmware(ACK, 1);
                     simCtl.WriteSerialToFirmware(commandParam, commandParam.Length);
                     complete = WaitForResponse(simCtl);
@@ -115,7 +123,7 @@ namespace PrinterSimulator
                 }
                 else
                 {
-                    Console.WriteLine("Sending NACK");
+                    //Console.WriteLine("Sending NACK");
                     simCtl.WriteSerialToFirmware(NACK, 1);
                 }
             } while (complete == false);

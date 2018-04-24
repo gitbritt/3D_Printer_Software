@@ -35,7 +35,7 @@ namespace Firmware
             while (switch_pressed != true)
             {
                 totalDelay += delay;
-                if (totalDelay >= 1000000)
+                if (totalDelay >= 1005000)
                 {
                     stepperSpeed = IncreaseStepperSpeed(stepperSpeed);
                     totalDelay = 0;
@@ -55,7 +55,7 @@ namespace Firmware
             for(int i = 0; i != 40000; i++)
             {
                 totalDelay += delay;
-                if (totalDelay >= 1000000) {
+                if (totalDelay >= 1005000) {
                     stepperSpeed = IncreaseStepperSpeed(stepperSpeed);
                     totalDelay = 0;
                 }

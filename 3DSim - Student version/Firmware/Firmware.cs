@@ -31,6 +31,7 @@ namespace Firmware
             {
                 bytesRead = printer.ReadSerialFromHost(headerReceived, 4);
             }
+            Console.WriteLine("HeaderBytesRead: " + bytesRead);
             //printer.WaitMicroseconds(10000);
             printer.WriteSerialToHost(headerReceived, 4);
         }
@@ -53,25 +54,26 @@ namespace Firmware
             // Todo - receive incoming commands from the serial link and act on those commands by calling the low-level hardwarwe APIs, etc.
 
 
-            var receivedHeader = new byte[4];
-            var ACKorNACK = new byte[1];
             byte ACK = 0xA5;
             byte NACK = 0xFF;
             while (!fDone)
             {
+                var receivedHeader = new byte[4];
+                var ACKorNACK = new byte[1];
                 ReceiveHeaderAndSend(receivedHeader);
                 //printer.WaitMicroseconds(5000);
                 var ackBytesRead = 0;
                 while (ACKorNACK[0] != ACK && ACKorNACK[0] != NACK)
                 {
-                    Console.WriteLine(Convert.ToInt32(ACKorNACK[0]) + " ACK or NACK");
                     ackBytesRead = printer.ReadSerialFromHost(ACKorNACK, 1);
+                    Console.WriteLine(Convert.ToInt32(ACKorNACK[0]) + " ACK or NACK");
                 }
                 //printer.ReadSerialFromHost(ACKorNACK, 1);
-                var headerResponse = ACKorNACK[0];
+                //var headerResponse = ACKorNACK[0];
                 //byte headerResponse = ReadHeaderResponse(printer);
-                if (headerResponse == ACK)
+                if (ACKorNACK[0] == ACK)
                 {
+                    Console.WriteLine("Checksum (low, high): (" + receivedHeader[2] + ", " + receivedHeader[3] + ")");
                     byte[] readParamByte = ReadParamBytes(receivedHeader);
                     printer.WriteSerialToHost(readParamByte, 10);
                 }

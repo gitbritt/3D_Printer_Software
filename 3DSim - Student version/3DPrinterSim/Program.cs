@@ -20,13 +20,13 @@ namespace PrinterSimulator
     {
         static byte[] SendHeaderAndReceive(PrinterControl printer, byte[] header)
         {
-            Console.WriteLine("SendingHeader");
+            //Console.WriteLine("SendingHeader");
             var fooRcvd = new byte[4];
             int bytesRead = 0;
 
+                printer.WriteSerialToFirmware(header, 4);
             do
             {
-                printer.WriteSerialToFirmware(header, 4);
                 bytesRead = printer.ReadSerialFromFirmware(fooRcvd, 4);
             } while (bytesRead < 1);
             return fooRcvd;
@@ -43,6 +43,7 @@ namespace PrinterSimulator
                 var readResponse = printer.ReadSerialFromFirmware(responseArray, 10);
                 if (readResponse == 10)
                 {
+                    Console.WriteLine("Host done waiting: " + responseArray[0]);
                     responseRcvd = true;
                 }
             }
@@ -78,13 +79,16 @@ namespace PrinterSimulator
             byte[] ACK = new byte[1] { 0xA5 };
             byte[] NACK = new byte[1] { 0xFF };
             var complete = false;
-            var commandPkt = new byte[4];
+            //var commandPkt = new byte[4];
             var header = new byte[4];
             Stopwatch swTimer = new Stopwatch();
             swTimer.Start();
 
 
-            commandPkt = new byte[] { 5, 2, 3, 2, 1, 1 };
+            var commandPkt = new byte[] { 5, 2, 3, 2, 1, 1 };
+
+            do
+            {
             for (int i = 0; i < 4; i++)
             {
                 header[i] = commandPkt[i];
@@ -95,17 +99,10 @@ namespace PrinterSimulator
             {
                 commandParam[x] = commandPkt[x + 4];
             }
-
-            do
-            {
-                var rcvHeader = SendHeaderAndReceive(simCtl, header);
-                bool correctHeader = ByteArraysEquals(header, rcvHeader);
-                if (!correctHeader)
-                {
-                    Console.WriteLine("Sending NACK");
-                    simCtl.WriteSerialToFirmware(NACK, 1);
-                }
-                else
+                var tempHeader = header;
+                Console.WriteLine(tempHeader[0] + tempHeader[1] + tempHeader[2] + tempHeader[3]);
+                var rcvHeader = SendHeaderAndReceive(simCtl, tempHeader);
+                if (ByteArraysEquals(tempHeader, rcvHeader))
                 {
                     Console.WriteLine("Sending ACK");
                     simCtl.WriteSerialToFirmware(ACK, 1);
@@ -115,6 +112,11 @@ namespace PrinterSimulator
                     {
                         Console.WriteLine("Success");
                     }
+                }
+                else
+                {
+                    Console.WriteLine("Sending NACK");
+                    simCtl.WriteSerialToFirmware(NACK, 1);
                 }
             } while (complete == false);
 

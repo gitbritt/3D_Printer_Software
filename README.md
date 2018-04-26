@@ -12,7 +12,7 @@ Hello and welcome to our Software Enginerring team project. Over a three month p
 ### Sprint 1
 * Setup Github
 * Expand knowledge on C#
-* Weekly [backlogs](../raw/master/Sprints/Sprint1-2_Status.png) and [burndown charts](../raw/master/Sprints/Sprint1-2_BurnDown.png)
+* Weekly [backlogs](https://github.com/jnpowrie/CPTR309-Team2/raw/master/Sprints/Sprint1-2_BurnDown.png) and [burndown charts](https://github.com/jnpowrie/CPTR309-Team2/raw/master/Sprints/Sprint1-2_BurnDown.png)
 
 ### Sprint 2
 * Host-to-Firmware Communications Procedure
@@ -24,7 +24,7 @@ Hello and welcome to our Software Enginerring team project. Over a three month p
   * GcodeTemp()
   * GcodeCmd()
 * Start Documentation
-* Weekly [backlogs](../raw/master/Sprints/Sprint2-3_Status.png) and [burndown charts](../raw/master/Sprints/Sprint2-3_BurnDown.png)
+* Weekly [backlogs](https://github.com/jnpowrie/CPTR309-Team2/raw/master/Sprints/Sprint2-3_Status.png) and [burndown charts](https://github.com/jnpowrie/CPTR309-Team2/raw/master/Sprints/Sprint2-3_BurnDown.png)
 
 ### Sprint 3
 * Implement Firmware Commands and Calling Low-level APIs in Firmware
@@ -41,7 +41,7 @@ Hello and welcome to our Software Enginerring team project. Over a three month p
 * Testing of Communications Procedure
 * Complete Project
 * Complete Documentation
-* Weekly [backlogs](../raw/master/Sprints/Sprint3-3_Status.png) and [burndown charts](../raw/master/Sprints/Sprint3-3_BurnDown.png)
+* Weekly [backlogs](https://github.com/jnpowrie/CPTR309-Team2/raw/master/Sprints/Sprint3-3_Status.png) and [burndown charts](https://github.com/jnpowrie/CPTR309-Team2/raw/master/Sprints/Sprint3-3_BurnDown.png)
 
 ## License
 This software is released under the terms of the GPL version 2 or (at your option) any later version. See [license](../master/LICENSE).

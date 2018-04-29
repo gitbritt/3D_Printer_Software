@@ -37,8 +37,8 @@ namespace PrinterSimulator
         {
             //Console.WriteLine("HostWaitResponse");
             var responseRcvd = false;
-            var responseArray = new byte[10];
             var successBytes = new byte[] { 0x53, 0x55, 0x43, 0x43, 0x45, 0x53, 0x53, 0, 0, 0 };
+            var responseArray = new byte[10];
             while (!responseRcvd)
             {
                 var readResponse = printer.ReadSerialFromFirmware(responseArray, 10);
@@ -87,6 +87,16 @@ namespace PrinterSimulator
             return returnByte;
         }
 
+        public static byte[] XYCommandPkt(byte commandByte, float x, float y)
+        {
+            var paramDataX = BitConverter.GetBytes(x);
+            var paramDataY = BitConverter.GetBytes(y);
+            var paramData = CombineBytes(paramDataX, paramDataY);
+            byte paramLength = Convert.ToByte(paramData.Length);
+            var header = new byte[] { commandByte, paramLength, 0, 0 };
+            return CombineBytes(header, paramData);
+        }
+
         public static byte[] FloatCommandPkt(byte commandByte, float command)
         {
             byte[] paramData = BitConverter.GetBytes(command);
@@ -123,12 +133,13 @@ namespace PrinterSimulator
             else
             {
                 commandByte = 2;
-                commandPkt = FloatCommandPkt(commandByte, gcodelist.GetXCommand());
+                commandPkt = XYCommandPkt(commandByte, gcodelist.GetXCommand(), gcodelist.GetYCommand());
                 CommunicationsProtocol(simCtl, commandPkt);
 
-                commandByte = 3;
-                commandPkt = FloatCommandPkt(commandByte, gcodelist.GetYCommand());
-                CommunicationsProtocol(simCtl, commandPkt);
+
+                //commandByte = 3;
+                //commandPkt = FloatCommandPkt(commandByte, gcodelist.GetYCommand());
+                //CommunicationsProtocol(simCtl, commandPkt);
             }
         }
 
@@ -146,9 +157,10 @@ namespace PrinterSimulator
 
             bool zChanged;
             bool laserOnChanged;
+            gcodelist.getNextLine();
 
             Console.WriteLine(gcodelist.GetSize());
-            while (count < 100) // Change this to be count < gcode.list.GetSize()
+            while (count < gcodelist.GetSize()) // Change this to be count < gcode.list.GetSize()
             {
                 gcodelist.getNextLine();
                 //Console.WriteLine();
@@ -183,7 +195,7 @@ namespace PrinterSimulator
                 {
                     header[i] = commandPkt[i];
                 }
-                var paramDataLen = Convert.ToInt32(commandPkt[1]);
+                var paramDataLen = commandPkt[1];
                 var commandParam = new byte[paramDataLen];
                 for (int x = 0; x < paramDataLen; x++)
                 {

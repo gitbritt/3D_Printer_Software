@@ -22,7 +22,7 @@ namespace Firmware
 
         public void z_rail_init(PrinterControl printer)   //Moves Galvos to the top
         {
-
+            // MERGE THIS
             Console.WriteLine("Z init function called\n");
             printer.WaitMicroseconds(1000000);
             var printer_height = printer.GetPrinterHeight();
@@ -75,6 +75,7 @@ namespace Firmware
         /// <returns></returns>
         public int CalculateStepperDelay(int stepperSpeed)
         {
+            //MERGE THIS
             double delay;
             if (stepperSpeed == 0)
             {
@@ -95,6 +96,7 @@ namespace Firmware
         /// <returns></returns>
         public int IncreaseStepperSpeed(int stepperSpeed)
         {
+            //MERGE THIS
             if (stepperSpeed < maxStepperSpeed && stepperSpeed >= 0)
             {
                 stepperSpeed += 1;
@@ -104,6 +106,7 @@ namespace Firmware
 
         public void MoveZrail(double millimeters, PrinterControl.StepperDir direction)
         {
+            //MERGE THIS
             Console.WriteLine("MovingZrail");
             var stepsToStep = Convert.ToInt32(millimeters * 400);
             var delay = 0;

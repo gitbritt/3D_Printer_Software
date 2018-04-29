@@ -35,7 +35,7 @@ namespace Firmware
             while (switch_pressed != true)
             {
                 totalDelay += delay;
-                if (totalDelay >= 1005000)
+                if (totalDelay >= 1010000)
                 {
                     stepperSpeed = IncreaseStepperSpeed(stepperSpeed);
                     totalDelay = 0;
@@ -55,7 +55,7 @@ namespace Firmware
             for(int i = 0; i != 40000; i++)
             {
                 totalDelay += delay;
-                if (totalDelay >= 1005000) {
+                if (totalDelay >= 1010000) {
                     stepperSpeed = IncreaseStepperSpeed(stepperSpeed);
                     totalDelay = 0;
                 }
@@ -89,8 +89,16 @@ namespace Firmware
         /// <returns></returns>
         public int CalculateStepperDelay(int stepperSpeed)
         {
-            double secondsPerStep = 1.0 / (minStepsPerSec * stepperSpeed);
-            var delay = 10000000 * secondsPerStep;
+            double delay;
+            if (stepperSpeed == 0)
+            {
+                delay = 0;
+            }
+            else
+            {
+                double secondsPerStep = 1.0 / (minStepsPerSec * stepperSpeed);
+                delay = 10000000 * secondsPerStep;
+            }
             return Convert.ToInt32(delay);
         }
         
@@ -107,6 +115,9 @@ namespace Firmware
             }
             return stepperSpeed;
         }
+
+        public void MoveZrailUp() { }
+
 
         public void x_y_Laser()
         {

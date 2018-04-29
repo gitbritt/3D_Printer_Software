@@ -22,7 +22,7 @@ namespace Firmware
 
         public void z_rail_init(PrinterControl printer)   //Moves Galvos to the top
         {
-            
+
             Console.WriteLine("Z init function called\n");
             printer.WaitMicroseconds(1000000);
             var printer_height = printer.GetPrinterHeight();
@@ -48,25 +48,11 @@ namespace Firmware
                     Console.WriteLine("Limit switch pressed");
             }
 
-            //Reset delay and stepperSpeed
-            delay = 0;
-            totalDelay = 0;
-            stepperSpeed = 1;
-            for(int i = 0; i != 40000; i++)
-            {
-                totalDelay += delay;
-                if (totalDelay >= 1010000) {
-                    stepperSpeed = IncreaseStepperSpeed(stepperSpeed);
-                    totalDelay = 0;
-                }
-                delay = CalculateStepperDelay(stepperSpeed);
-                printer.WaitMicroseconds(delay);
-                printer.StepStepper(step_down);
-            }
-            
+            MoveZrail(printer_height, step_down);
+
             Console.WriteLine("At build surface");
-            Console.ReadKey();
-            
+            //Console.ReadKey();
+
         }
 
         /// <summary>
@@ -101,7 +87,7 @@ namespace Firmware
             }
             return Convert.ToInt32(delay);
         }
-        
+
         /// <summary>
         /// Increases the stepper speed
         /// </summary>
@@ -109,20 +95,36 @@ namespace Firmware
         /// <returns></returns>
         public int IncreaseStepperSpeed(int stepperSpeed)
         {
-            if (stepperSpeed < 10 && stepperSpeed >= 0)
+            if (stepperSpeed < maxStepperSpeed && stepperSpeed >= 0)
             {
                 stepperSpeed += 1;
             }
             return stepperSpeed;
         }
 
-        public void MoveZrailUp() { }
-
-
-        public void x_y_Laser()
+        public void MoveZrail(double millimeters, PrinterControl.StepperDir direction)
         {
+            Console.WriteLine("MovingZrail");
+            var stepsToStep = Convert.ToInt32(millimeters * 400);
+            var delay = 0;
+            var totalDelay = 0;
+            var stepperSpeed = 1;
+            for (int i = 0; i != stepsToStep/*40000*/; i++)
+            {
+                totalDelay += delay;
+                if (totalDelay >= 1010000)
+                {
+                    stepperSpeed = IncreaseStepperSpeed(stepperSpeed);
+                    totalDelay = 0;
+                }
+                delay = CalculateStepperDelay(stepperSpeed);
+                printer.WaitMicroseconds(delay);
+                printer.StepStepper(direction);
+            }
 
         }
+
+
         //public void z_rails(float z)
         //{
         //    var z_rails_height = printer.GetPrinterHeight() - z;    //New Rails Height that is passed in from the GCODE file
@@ -219,6 +221,7 @@ namespace Firmware
             //Z Rails
             printer.ResetStepper();
             z_rail_init(printer);
+            MoveZrail(50, PrinterControl.StepperDir.STEP_UP);
             var a = 40;//Testing code. Will delete a
                        //if (pressed == true)
                        //   z_rails(a);

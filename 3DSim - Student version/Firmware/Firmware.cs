@@ -62,6 +62,10 @@ namespace Firmware
 
             byte ACK = 0xA5;
             byte NACK = 0xFF;
+
+            float xVoltage = 0;
+            float yVoltage = 0;
+
             while (!fDone)
             {
                 var receivedHeader = new byte[4];
@@ -81,13 +85,40 @@ namespace Firmware
                 {
                     //Console.WriteLine("Checksum (low, high): (" + receivedHeader[2] + ", " + receivedHeader[3] + ")");
                     printer.WaitMicroseconds(10000);
-                    byte[] readParamByte = ReadParamBytes(receivedHeader);
+                    var paramData = new byte[4];
+                    byte[] readParamByte = ReadParamBytes(receivedHeader, paramData);
+                    //Console.WriteLine("Firmware: " + BitConverter.ToString(receivedHeader) + "|-|" + BitConverter.ToString(paramData));
+                    var calculatedChecksum = CalculateChecksum(receivedHeader, paramData);
+                    if (receivedHeader[2] == calculatedChecksum[0] && receivedHeader[3] == calculatedChecksum[1])
+                    {
+                        if (receivedHeader[0] == 0)
+                        {
+                            Console.WriteLine("Execute z-rail/stepper with data: " + BitConverter.ToSingle(paramData, 0));
+                        }
+                        else if (receivedHeader[0] == 1)
+                        {
+                            Console.WriteLine("Execute setLaser with data: " + BitConverter.ToBoolean(paramData, 0));
+                        }
+                        else
+                        {
+                            if (receivedHeader[0] == 2)
+                            {
+                                xVoltage = BitConverter.ToSingle(paramData, 0);
+                            }
+                            if (receivedHeader[0] == 3)
+                            {
+                                yVoltage = BitConverter.ToSingle(paramData, 0);
+                                Console.WriteLine("Execute moveGalvos with data: xVoltage: " + xVoltage + " yVoltage: " + yVoltage);
+                            }
+                        }
+                    }
+                    //Console.WriteLine(BitConverter.ToSingle(paramData, 0));
                     printer.WriteSerialToHost(readParamByte, 10);
                 }
             }
         }
 
-        byte[] ReadParamBytes(byte[] header)
+        byte[] ReadParamBytes(byte[] header, byte[] paramData)
         {
             var paramBytes = new byte[header[1]];
             var paramBytesRead = printer.ReadSerialFromHost(paramBytes, header[1]);
@@ -101,6 +132,7 @@ namespace Firmware
                 //Console.WriteLine("Checksum (low, high): (" + calculatedChecksum[0] + ", " + calculatedChecksum[1] + ")");
                 if (header[2] == calculatedChecksum[0] && header[3] == calculatedChecksum[1])
                 {
+                    paramBytes.CopyTo(paramData, 0);
                     return successBytes;
                 }
                 else

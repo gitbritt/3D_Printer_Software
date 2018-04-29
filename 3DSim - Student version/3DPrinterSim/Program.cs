@@ -13,6 +13,7 @@ using System.Runtime.InteropServices;
 using System.Diagnostics;
 using Hardware;
 using Firmware;
+using ParseGCODE;
 
 namespace PrinterSimulator
 {
@@ -78,56 +79,89 @@ namespace PrinterSimulator
             return checksumBytes;
         }
 
+        public static byte[] CombineBytes(byte[] first, byte[] second)
+        {
+            byte[] returnByte = new byte[first.Length + second.Length];
+            Buffer.BlockCopy(first, 0, returnByte, 0, first.Length);
+            Buffer.BlockCopy(second, 0, returnByte, first.Length, second.Length);
+            return returnByte;
+        }
+
+        public static byte[] FloatCommandPkt(byte commandByte, float command)
+        {
+            byte[] paramData = BitConverter.GetBytes(command);
+            byte paramLength = Convert.ToByte(paramData.Length);
+            var header = new byte[] { commandByte, paramLength, 0, 0 };
+            return CombineBytes(header, paramData);
+        }
+
+        public static byte[] BoolCommandPkt(byte commandByte, bool command)
+        {
+            byte[] paramData = BitConverter.GetBytes(command);
+            byte paramLength = Convert.ToByte(paramData.Length);
+            var header = new byte[] { commandByte, paramLength, 0, 0 };
+            return CombineBytes(header, paramData);
+        }
+
+        public static void SendCommandPkt(PrinterControl simCtl, GCODE gcodelist, bool zChanged, bool laserOnChanged)
+        {
+            byte commandByte;
+            byte[] commandPkt;
+
+            if (zChanged)
+            {
+                commandByte = 0;
+                commandPkt = FloatCommandPkt(commandByte, gcodelist.GetZCommand());
+                CommunicationsProtocol(simCtl, commandPkt);
+            }
+            else if (laserOnChanged)
+            {
+                commandByte = 1;
+                commandPkt = BoolCommandPkt(commandByte, gcodelist.GetLaserOn());
+                CommunicationsProtocol(simCtl, commandPkt);
+            }
+            else
+            {
+                commandByte = 2;
+                commandPkt = FloatCommandPkt(commandByte, gcodelist.GetXCommand());
+                CommunicationsProtocol(simCtl, commandPkt);
+
+                commandByte = 3;
+                commandPkt = FloatCommandPkt(commandByte, gcodelist.GetYCommand());
+                CommunicationsProtocol(simCtl, commandPkt);
+            }
+        }
+
         static void PrintFile(PrinterControl simCtl)
         {
             System.IO.StreamReader file = new System.IO.StreamReader("..\\..\\..\\SampleSTLs\\F-35_Corrected.gcode");
 
-            
+
             //var commandPkt = new byte[4];
             Stopwatch swTimer = new Stopwatch();
             swTimer.Start();
 
+            GCODE gcodelist = new GCODE(file);
+            int count = 0;
 
-            var commandPkt = new byte[] { 5, 2, 0, 0, 1, 1 };
+            bool zChanged;
+            bool laserOnChanged;
 
-            CommunicationsProtocol(simCtl, commandPkt);
+            Console.WriteLine(gcodelist.GetSize());
+            while (count < 100) // Change this to be count < gcode.list.GetSize()
+            {
+                gcodelist.getNextLine();
+                //Console.WriteLine();
+                //Console.WriteLine("Line: {0}", gcodelist.getNextLine());
 
-            //do
-            //{
-            //    for (int i = 0; i < 4; i++)
-            //    {
-            //        header[i] = commandPkt[i];
-            //    }
-            //    var paramDataLen = Convert.ToInt32(commandPkt[1]);
-            //    var commandParam = new byte[paramDataLen];
-            //    for (int x = 0; x < paramDataLen; x++)
-            //    {
-            //        commandParam[x] = commandPkt[x + 4];
-            //    }
-            //    var checksumBytes = CalculateChecksum((byte[])header, commandParam);
-            //    header[2] = checksumBytes[0];
-            //    header[3] = checksumBytes[1];
-            //    //Console.WriteLine((int)(header[0] + header[1] + header[2] + header[3]));
-            //    var rcvHeader = SendHeaderAndReceive(simCtl, header);
-            //    if (ByteArraysEquals(header, rcvHeader))
-            //    {
-            //        //Console.WriteLine("Sending ACK");
-            //        simCtl.WriteSerialToFirmware(ACK, 1);
-            //        simCtl.WriteSerialToFirmware(commandParam, commandParam.Length);
-            //        complete = WaitForResponse(simCtl);
-            //        if (complete)
-            //        {
-            //            Console.WriteLine("Success");
-            //        }
-            //    }
-            //    else
-            //    {
-            //        //Console.WriteLine("Sending NACK");
-            //        simCtl.WriteSerialToFirmware(NACK, 1);
-            //    }
-            //} while (complete == false);
+                zChanged = gcodelist.GetZCommandChanged();
+                laserOnChanged = gcodelist.GetLaserOnChanged();
 
+                SendCommandPkt(simCtl, gcodelist, zChanged, laserOnChanged);
 
+                count++;
+            }
+            Console.WriteLine(count);
 
             swTimer.Stop();
             long elapsedMS = swTimer.ElapsedMilliseconds;
@@ -168,7 +202,7 @@ namespace PrinterSimulator
                     complete = WaitForResponse(simCtl);
                     if (complete)
                     {
-                        Console.WriteLine("Success");
+                        //Console.WriteLine("Success");
                     }
                 }
                 else

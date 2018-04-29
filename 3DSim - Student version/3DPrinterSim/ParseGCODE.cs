@@ -12,6 +12,8 @@ namespace ParseGCODE
         float yCommand;
         float zCommand;
         bool laserOn;
+        bool zCommandChanged;
+        bool laserOnChanged;
         System.IO.StreamReader file;
         List<string> gcodeList = new List<string>();
         int index = 0;
@@ -53,6 +55,21 @@ namespace ParseGCODE
             return index;
         }
 
+        public bool GetZCommandChanged()
+        {
+            return zCommandChanged;
+        }
+
+        public bool GetLaserOnChanged()
+        {
+            return laserOnChanged;
+        }
+
+        public int GetSize()
+        {
+            return size;
+        }
+
         void FileToList()
         {
             string line;
@@ -78,11 +95,18 @@ namespace ParseGCODE
             foreach (var command in commands)
             {
                 if (command.Contains("X"))
+                {
                     xCommand = StringCommandToFloat(command);
+                }
                 else if (command.Contains("Y"))
+                {
                     yCommand = StringCommandToFloat(command);
+                }
                 else if (command.Contains("Z"))
+                {
                     zCommand = StringCommandToFloat(command);
+                    zCommandChanged = true;
+                }
                 else if (command.Contains("E"))
                 {
                     if (StringCommandToFloat(command) == 0)
@@ -96,8 +120,15 @@ namespace ParseGCODE
 
         public string getNextLine()
         {
+            zCommandChanged = false;
+            laserOnChanged = false;
+            bool prevlaserOn = laserOn;
             string commands = gcodeList[index];
             ExtractCommandsFromLine(index);
+            if (prevlaserOn != laserOn)
+            {
+                laserOnChanged = true;
+            }
             if (index < size)
             {
                 index++;

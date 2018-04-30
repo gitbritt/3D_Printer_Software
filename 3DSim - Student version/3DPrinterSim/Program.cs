@@ -156,7 +156,7 @@ namespace PrinterSimulator
             gcodelist.getNextLine();
 
             Console.WriteLine(gcodelist.GetSize());
-            while (count < gcodelist.GetSize()) // Change this to be count < gcode.list.GetSize()
+            while (gcodelist.GetIndex() < gcodelist.GetSize()) // Change this to be count < gcode.list.GetSize()
             {
                 gcodelist.getNextLine();
                 //Console.WriteLine();

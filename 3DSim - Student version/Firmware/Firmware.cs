@@ -181,7 +181,7 @@ namespace Firmware
                 if (ACKorNACK[0] == ACK)
                 {
                     //Need to find sweet spot for this time.
-                    printer.WaitMicroseconds(2750);
+                    printer.WaitMicroseconds(3000);
                     var paramData = new byte[receivedHeader[1]];
                     byte[] readParamByte = ReadParamBytes(receivedHeader, paramData);
                     if (ByteArraysEquals(readParamByte, timeoutBytes))
@@ -228,8 +228,6 @@ namespace Firmware
                     }
                 }
             }
-
-            ToLimit();
         }
 
         byte[] ReadParamBytes(byte[] header, byte[] paramData)

@@ -14,22 +14,24 @@ namespace Firmware
         PrinterControl printer;
         bool fDone = false;
         bool fInitialized = false;
-        byte[] successBytes = new byte[] { 0x53, 0x55, 0x43, 0x43, 0x45, 0x53, 0x53, 0, 0, 0 };
-        byte[] timeoutBytes = new byte[] { 0x54, 0x49, 0x4d, 0x45, 0x4f, 0x55, 0x54, 0, 0, 0 };
-        byte[] checksumBytes = new byte[] { 0x43, 0x48, 0x45, 0x43, 0x4b, 0x53, 0x55, 0x4d, 0, 0 };
+        byte[] successBytes = new byte[] { 0x53, 0x55, 0x43, 0x43, 0x45, 0x53, 0x53, 0 };
+        byte[] timeoutBytes = new byte[] { 0x54, 0x49, 0x4d, 0x45, 0x4f, 0x55, 0x54, 0 };
+        byte[] checksumBytes = new byte[] { 0x43, 0x48, 0x45, 0x43, 0x4b, 0x53, 0x55, 0x4d };
+        static int responseBytesLen = 8;
         static int minStepsPerSec = 16000;
         static int maxStepsPerSec = 160000;
         static int maxStepperSpeed = 10; //Because the max amount of times the stepper can accelerate is 10 times
 
         public void z_rail_init(/*PrinterControl printer*/)   //Moves Galvos to the top
         {
-            // MERGE THIS
-            Console.WriteLine("Z init function called\n");
             printer.WaitMicroseconds(1000000);
-            var printer_height = printer.GetPrinterHeight();
+            ToLimit();
+            MoveZrail(printer.GetPrinterHeight(), PrinterControl.StepperDir.STEP_DOWN);
+        }
+
+        public void ToLimit()
+        {
             var switch_pressed = printer.LimitSwitchPressed();
-            var step_up = PrinterControl.StepperDir.STEP_UP;
-            var step_down = PrinterControl.StepperDir.STEP_DOWN;
             var delay = 0;
             var stepperSpeed = 1;
             var totalDelay = 0; //Too keep track of the number of uS before increasing speed.
@@ -43,17 +45,9 @@ namespace Firmware
                 }
                 delay = CalculateStepperDelay(stepperSpeed);
                 printer.WaitMicroseconds(delay);
-                printer.StepStepper(step_up);
+                printer.StepStepper(PrinterControl.StepperDir.STEP_UP);
                 switch_pressed = printer.LimitSwitchPressed();
-                if (switch_pressed == true)
-                    Console.WriteLine("Limit switch pressed");
             }
-
-            MoveZrail(printer_height, step_down);
-
-            Console.WriteLine("At build surface");
-            //Console.ReadKey();
-
         }
 
         /// <summary>
@@ -76,7 +70,6 @@ namespace Firmware
         /// <returns></returns>
         public int CalculateStepperDelay(int stepperSpeed)
         {
-            //MERGE THIS
             double delay;
             if (stepperSpeed == 0)
             {
@@ -97,7 +90,6 @@ namespace Firmware
         /// <returns></returns>
         public int IncreaseStepperSpeed(int stepperSpeed)
         {
-            //MERGE THIS
             if (stepperSpeed < maxStepperSpeed && stepperSpeed >= 0)
             {
                 stepperSpeed += 1;
@@ -105,25 +97,26 @@ namespace Firmware
             return stepperSpeed;
         }
 
-        public void MoveZrail(double millimeters, PrinterControl.StepperDir direction)
+        public void MoveZrail(float millimeters, PrinterControl.StepperDir direction)
         {
-            //MERGE THIS
-            Console.WriteLine("MovingZrail");
-            var stepsToStep = Convert.ToInt32(millimeters * 400);
-            var delay = 0;
-            var totalDelay = 0;
-            var stepperSpeed = 1;
-            for (int i = 0; i != stepsToStep/*40000*/; i++)
+            if (millimeters > 0)
             {
-                totalDelay += delay;
-                if (totalDelay >= 1010000)
+                var stepsToStep = Convert.ToInt32(millimeters * 400);
+                var delay = 0;
+                var totalDelay = 0;
+                var stepperSpeed = 1;
+                for (int i = 0; i != stepsToStep; i++)
                 {
-                    stepperSpeed = IncreaseStepperSpeed(stepperSpeed);
-                    totalDelay = 0;
+                    totalDelay += delay;
+                    if (totalDelay >= 1010000)
+                    {
+                        stepperSpeed = IncreaseStepperSpeed(stepperSpeed);
+                        totalDelay = 0;
+                    }
+                    delay = CalculateStepperDelay(stepperSpeed);
+                    printer.WaitMicroseconds(delay);
+                    printer.StepStepper(direction);
                 }
-                delay = CalculateStepperDelay(stepperSpeed);
-                printer.WaitMicroseconds(delay);
-                printer.StepStepper(direction);
             }
 
         }
@@ -135,14 +128,11 @@ namespace Firmware
 
         void ReceiveHeaderAndSend(byte[] headerReceived)
         {
-            //var headerReceived = new byte[4];
             int bytesRead = 0;
             while (bytesRead < 1)
             {
                 bytesRead = printer.ReadSerialFromHost(headerReceived, 4);
             }
-            //Console.WriteLine("HeaderBytesRead: " + bytesRead);
-            //printer.WaitMicroseconds(10000);
             printer.WriteSerialToHost(headerReceived, 4);
         }
 
@@ -150,11 +140,11 @@ namespace Firmware
         public byte[] CalculateChecksum(byte[] header, byte[] paramBytes)
         {
             ushort commandByteInFunc = 0;
-            commandByteInFunc += Convert.ToUInt16(header[0]);
-            commandByteInFunc += Convert.ToUInt16(header[1]);
+            commandByteInFunc += header[0];
+            commandByteInFunc += header[1];
             foreach (byte b in paramBytes)
             {
-                commandByteInFunc += Convert.ToUInt16(b);
+                commandByteInFunc += b;
             }
             var checksumBytes = new byte[2];
             checksumBytes[1] = Convert.ToByte(commandByteInFunc >> 4);
@@ -176,54 +166,70 @@ namespace Firmware
 
             float xVoltage = 0;
             float yVoltage = 0;
+            float oldZLocation = 0;
 
             while (!fDone)
             {
                 var receivedHeader = new byte[4];
                 var ACKorNACK = new byte[1];
                 ReceiveHeaderAndSend(receivedHeader);
-                //printer.WaitMicroseconds(5000);
                 var ackBytesRead = 0;
                 while (ACKorNACK[0] != ACK && ACKorNACK[0] != NACK)
                 {
                     ackBytesRead = printer.ReadSerialFromHost(ACKorNACK, 1);
-                    //Console.WriteLine(Convert.ToInt32(ACKorNACK[0]) + " ACK or NACK");
                 }
-                //printer.ReadSerialFromHost(ACKorNACK, 1);
-                //var headerResponse = ACKorNACK[0];
-                //byte headerResponse = ReadHeaderResponse(printer);
                 if (ACKorNACK[0] == ACK)
                 {
-                    //Console.WriteLine("Checksum (low, high): (" + receivedHeader[2] + ", " + receivedHeader[3] + ")");
-                    printer.WaitMicroseconds(10000);
+                    //Need to find sweet spot for this time.
+                    printer.WaitMicroseconds(2750);
                     var paramData = new byte[receivedHeader[1]];
                     byte[] readParamByte = ReadParamBytes(receivedHeader, paramData);
-                    //Console.WriteLine("Firmware: " + BitConverter.ToString(receivedHeader) + "|-|" + BitConverter.ToString(paramData));
-                    var calculatedChecksum = CalculateChecksum(receivedHeader, paramData);
-                    if (receivedHeader[2] == calculatedChecksum[0] && receivedHeader[3] == calculatedChecksum[1])
+                    if (ByteArraysEquals(readParamByte, timeoutBytes))
                     {
-                        if (receivedHeader[0] == 0)
+                        printer.WriteSerialToHost(timeoutBytes, responseBytesLen);
+                    }
+                    else
+                    {
+                        //Console.WriteLine("Firmware: " + BitConverter.ToString(receivedHeader) + "|-|" + BitConverter.ToString(paramData));
+                        var calculatedChecksum = CalculateChecksum(receivedHeader, paramData);
+                        if (receivedHeader[2] == calculatedChecksum[0] && receivedHeader[3] == calculatedChecksum[1])
                         {
-                            Console.WriteLine("Execute z-rail/stepper with data: " + BitConverter.ToSingle(paramData, 0));
-                            MoveZrail(0.5, PrinterControl.StepperDir.STEP_UP);
+                            if (receivedHeader[0] == 0)
+                            {
+                                var distance = BitConverter.ToSingle(paramData, 0) - oldZLocation;
+                                oldZLocation = BitConverter.ToSingle(paramData, 0);
+                                MoveZrail(distance, PrinterControl.StepperDir.STEP_UP);
+                            }
+                            else if (receivedHeader[0] == 1)
+                            {
+                                //Console.WriteLine("Execute setLaser with data: " + BitConverter.ToBoolean(paramData, 0));
+                                printer.SetLaser(BitConverter.ToBoolean(paramData, 0));
+                            }
+                            else if (receivedHeader[0] == 2)
+                            {
+                                xVoltage = BitConverter.ToSingle(paramData, 0) / 20;
+                                yVoltage = BitConverter.ToSingle(paramData, 4) / 20;
+                                if ((xVoltage < -2.25 || xVoltage > 2.25) || (yVoltage < -2.25 || yVoltage > 2.25))
+                                {
+                                    //Console.WriteLine("Execute moveGalvos with data: xVoltage: " + xVoltage + " yVoltage: " + yVoltage);
+                                    readParamByte = timeoutBytes;
+                                }
+                                else
+                                {
+                                    printer.MoveGalvos(xVoltage, yVoltage);
+                                }
+                            }
+                            printer.WriteSerialToHost(successBytes, responseBytesLen);
                         }
-                        else if (receivedHeader[0] == 1)
+                        else
                         {
-                            Console.WriteLine("Execute setLaser with data: " + BitConverter.ToBoolean(paramData, 0));
-                            printer.SetLaser(BitConverter.ToBoolean(paramData, 0));
-                        }
-                        else if (receivedHeader[0] == 2)
-                        {
-                            xVoltage = BitConverter.ToSingle(paramData, 0)/20;
-                            yVoltage = BitConverter.ToSingle(paramData, 4)/20;
-                            Console.WriteLine("Execute moveGalvos with data: xVoltage: " + xVoltage + " yVoltage: " + yVoltage);
-                            printer.MoveGalvos(xVoltage, yVoltage);
+                            printer.WriteSerialToHost(checksumBytes, responseBytesLen);
                         }
                     }
-                    //Console.WriteLine(BitConverter.ToSingle(paramData, 0));
-                    printer.WriteSerialToHost(readParamByte, 10);
                 }
             }
+
+            ToLimit();
         }
 
         byte[] ReadParamBytes(byte[] header, byte[] paramData)
@@ -237,7 +243,6 @@ namespace Firmware
             else
             {
                 var calculatedChecksum = CalculateChecksum(header, paramBytes);
-                //Console.WriteLine("Checksum (low, high): (" + calculatedChecksum[0] + ", " + calculatedChecksum[1] + ")");
                 if (header[2] == calculatedChecksum[0] && header[3] == calculatedChecksum[1])
                 {
                     paramBytes.CopyTo(paramData, 0);
@@ -249,6 +254,20 @@ namespace Firmware
                 }
             }
 
+        }
+
+        bool ByteArraysEquals(byte[] array1, byte[] array2)
+        {
+            if (array1.Length == array2.Length)
+            {
+                for (int i = 0; i < array1.Length; i++)
+                {
+                    if (array1[i] != array2[i])
+                        return false;
+                }
+                return true;
+            }
+            return false;
         }
 
         byte ReadHeaderResponse()

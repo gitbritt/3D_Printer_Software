@@ -19,9 +19,6 @@ namespace PrinterSimulator
 {
     class PrintSim
     {
-        static byte[] successBytes = new byte[] { 0x53, 0x55, 0x43, 0x43, 0x45, 0x53, 0x53, 0};
-        static byte[] ACK = new byte[1] { 0xA5 };
-        static byte[] NACK = new byte[1] { 0xFF };
         static byte[] SendHeaderAndReceive(PrinterControl printer, byte[] header)
         {
             //Console.WriteLine("SendingHeader");
@@ -40,11 +37,12 @@ namespace PrinterSimulator
         {
             //Console.WriteLine("HostWaitResponse");
             var responseRcvd = false;
-            var responseArray = new byte[successBytes.Length];
+            var successBytes = new byte[] { 0x53, 0x55, 0x43, 0x43, 0x45, 0x53, 0x53, 0, 0, 0 };
+            var responseArray = new byte[10];
             while (!responseRcvd)
             {
-                var readResponse = printer.ReadSerialFromFirmware(responseArray, successBytes.Length);
-                if (readResponse == successBytes.Length)
+                var readResponse = printer.ReadSerialFromFirmware(responseArray, 10);
+                if (readResponse == 10)
                 {
                     //Console.WriteLine("Host done waiting: " + responseArray[0]);
                     responseRcvd = true;
@@ -68,11 +66,11 @@ namespace PrinterSimulator
         static byte[] CalculateChecksum(byte[] header, byte[] paramBytes)
         {
             ushort commandByteInFunc = 0;
-            commandByteInFunc += header[0];
-            commandByteInFunc += header[1];
+            commandByteInFunc += Convert.ToUInt16(header[0]);
+            commandByteInFunc += Convert.ToUInt16(header[1]);
             foreach (byte b in paramBytes)
             {
-                commandByteInFunc += b;
+                commandByteInFunc += Convert.ToUInt16(b);
             }
             var checksumBytes = new byte[2];
             checksumBytes[1] = Convert.ToByte(commandByteInFunc >> 4);
@@ -137,12 +135,18 @@ namespace PrinterSimulator
                 commandByte = 2;
                 commandPkt = XYCommandPkt(commandByte, gcodelist.GetXCommand(), gcodelist.GetYCommand());
                 CommunicationsProtocol(simCtl, commandPkt);
+
+
+                //commandByte = 3;
+                //commandPkt = FloatCommandPkt(commandByte, gcodelist.GetYCommand());
+                //CommunicationsProtocol(simCtl, commandPkt);
             }
         }
 
         static void PrintFile(PrinterControl simCtl)
         {
             System.IO.StreamReader file = new System.IO.StreamReader("..\\..\\..\\SampleSTLs\\F-35_Corrected.gcode");
+
 
             //var commandPkt = new byte[4];
             Stopwatch swTimer = new Stopwatch();
@@ -181,7 +185,8 @@ namespace PrinterSimulator
 
         public static void CommunicationsProtocol(PrinterControl simCtl, byte[] commandPkt)
         {
-            
+            byte[] ACK = new byte[1] { 0xA5 };
+            byte[] NACK = new byte[1] { 0xFF };
             var complete = false;
             var header = new byte[4];
             do
@@ -199,6 +204,7 @@ namespace PrinterSimulator
                 var checksumBytes = CalculateChecksum((byte[])header, commandParam);
                 header[2] = checksumBytes[0];
                 header[3] = checksumBytes[1];
+                //Console.WriteLine((int)(header[0] + header[1] + header[2] + header[3]));
                 var rcvHeader = SendHeaderAndReceive(simCtl, header);
                 if (ByteArraysEquals(header, rcvHeader))
                 {
@@ -206,6 +212,10 @@ namespace PrinterSimulator
                     simCtl.WriteSerialToFirmware(ACK, 1);
                     simCtl.WriteSerialToFirmware(commandParam, commandParam.Length);
                     complete = WaitForResponse(simCtl);
+                    if (complete)
+                    {
+                        //Console.WriteLine("Success");
+                    }
                 }
                 else
                 {

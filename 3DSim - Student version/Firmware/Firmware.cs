@@ -158,8 +158,7 @@ namespace Firmware
         {
 
             // Todo - receive incoming commands from the serial link and act on those commands by calling the low-level hardwarwe APIs, etc.
-            printer.ResetStepper();
-            z_rail_init();
+            
 
             byte ACK = 0xA5;
             byte NACK = 0xFF;
@@ -174,6 +173,7 @@ namespace Firmware
                 var ACKorNACK = new byte[1];
                 ReceiveHeaderAndSend(receivedHeader);
                 var ackBytesRead = 0;
+                printer.WaitMicroseconds(3000);
                 while (ACKorNACK[0] != ACK && ACKorNACK[0] != NACK)
                 {
                     ackBytesRead = printer.ReadSerialFromHost(ACKorNACK, 1);
@@ -181,19 +181,23 @@ namespace Firmware
                 if (ACKorNACK[0] == ACK)
                 {
                     //Need to find sweet spot for this time.
-                    printer.WaitMicroseconds(3000);
                     var paramData = new byte[receivedHeader[1]];
-                    var readParamByte = ReadParamBytes(receivedHeader, paramData);
-                    if (ByteArraysEquals(readParamByte, timeoutBytes))
+                    //var readParamByte = ReadParamBytes(receivedHeader, paramData);
+                    //var paramBytes = new byte[header[1]];
+                    var paramBytesRead = printer.ReadSerialFromHost(paramData, receivedHeader[1]);
+                    var responseByte = new byte[successBytes.Length];
+                    if (paramBytesRead != (byte)receivedHeader[1]/*ByteArraysEquals(readParamByte, timeoutBytes)*/)
                     {
                         printer.WriteSerialToHost(timeoutBytes, responseBytesLen);
                     }
                     else
                     {
                         //Console.WriteLine("Firmware: " + BitConverter.ToString(receivedHeader) + "|-|" + BitConverter.ToString(paramData));
+                        responseByte = successBytes;
                         var calculatedChecksum = CalculateChecksum(receivedHeader, paramData);
                         if (receivedHeader[2] == calculatedChecksum[0] && receivedHeader[3] == calculatedChecksum[1])
                         {
+                            printer.WriteSerialToHost(successBytes, successBytes.Length);
                             if (receivedHeader[0] == 0)
                             {
                                 var distance = BitConverter.ToSingle(paramData, 0) - oldZLocation;
@@ -209,17 +213,13 @@ namespace Firmware
                             {
                                 xVoltage = BitConverter.ToSingle(paramData, 0) / 20;
                                 yVoltage = BitConverter.ToSingle(paramData, 4) / 20;
-                                if ((xVoltage < -2.25 || xVoltage > 2.25) || (yVoltage < -2.25 || yVoltage > 2.25))
-                                {
-                                    //Console.WriteLine("Execute moveGalvos with data: xVoltage: " + xVoltage + " yVoltage: " + yVoltage);
-                                    readParamByte = timeoutBytes;
-                                }
-                                else
+                                if ((xVoltage > -2.25 && xVoltage < 2.25) && (yVoltage > -2.25 && yVoltage < 2.25))
                                 {
                                     printer.MoveGalvos(xVoltage, yVoltage);
+                                    //Console.WriteLine("Execute moveGalvos with data: xVoltage: " + xVoltage + " yVoltage: " + yVoltage);
                                 }
                             }
-                            printer.WriteSerialToHost(readParamByte, responseBytesLen);
+                            //printer.WriteSerialToHost(successBytes, successBytes.Length);
                         }
                         else
                         {
@@ -282,7 +282,8 @@ namespace Firmware
         public void Start()
         {
             fInitialized = true;
-
+            printer.ResetStepper();
+            z_rail_init();
             Process(); // this is a blocking call
         }
 

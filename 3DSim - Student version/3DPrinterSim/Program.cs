@@ -41,27 +41,18 @@ namespace PrinterSimulator
             //Console.WriteLine("HostWaitResponse");
             var responseRcvd = false;
             var responseArray = new byte[successBytes.Length];
-            while (!responseRcvd)
+            var readResponse = 0;
+            while (/*!responseRcvd*/ readResponse != successBytes.Length)
             {
-                var readResponse = printer.ReadSerialFromFirmware(responseArray, successBytes.Length);
-                if (readResponse == successBytes.Length)
-                {
-                    //Console.WriteLine("Host done waiting: " + responseArray[0]);
-                    responseRcvd = true;
-                }
+                /*var */readResponse = printer.ReadSerialFromFirmware(responseArray, successBytes.Length);
+                //if (readResponse == successBytes.Length)
+                //{
+                //    //Console.WriteLine("Host done waiting: " + responseArray[0]);
+                //    responseRcvd = true;
+                //}
             }
-            if (responseArray.Length == successBytes.Length)
-            {
-                for (int i = 0; i < responseArray.Length; i++)
-                {
-                    if (responseArray[i] != successBytes[i])
-                    {
-                        return false;
-                    }
-                }
-                return true;
-            }
-            return false;
+
+            return ByteArraysEquals(successBytes, responseArray);
 
         }
 
@@ -186,16 +177,10 @@ namespace PrinterSimulator
             var header = new byte[4];
             do
             {
-                for (int i = 0; i < 4; i++)
-                {
-                    header[i] = commandPkt[i];
-                }
+                Buffer.BlockCopy(commandPkt, 0, header, 0, 4);
                 var paramDataLen = commandPkt[1];
                 var commandParam = new byte[paramDataLen];
-                for (int x = 0; x < paramDataLen; x++)
-                {
-                    commandParam[x] = commandPkt[x + 4];
-                }
+                Buffer.BlockCopy(commandPkt, 4, commandParam, 0, paramDataLen);
                 var checksumBytes = CalculateChecksum((byte[])header, commandParam);
                 header[2] = checksumBytes[0];
                 header[3] = checksumBytes[1];
@@ -203,8 +188,10 @@ namespace PrinterSimulator
                 if (ByteArraysEquals(header, rcvHeader))
                 {
                     //Console.WriteLine("Sending ACK");
-                    simCtl.WriteSerialToFirmware(ACK, 1);
-                    simCtl.WriteSerialToFirmware(commandParam, commandParam.Length);
+                    var ackParam = CombineBytes(ACK, commandParam);
+                    //simCtl.WriteSerialToFirmware(ACK, 1);
+                    //simCtl.WriteSerialToFirmware(commandParam, commandParam.Length);
+                    simCtl.WriteSerialToFirmware(ackParam, ackParam.Length);
                     complete = WaitForResponse(simCtl);
                 }
                 else

@@ -108,7 +108,7 @@ namespace Firmware
                 for (int i = 0; i != stepsToStep; i++)
                 {
                     totalDelay += delay;
-                    if (totalDelay >= 1010000)
+                    if (totalDelay >= 1100000)
                     {
                         stepperSpeed = IncreaseStepperSpeed(stepperSpeed);
                         totalDelay = 0;
@@ -183,7 +183,7 @@ namespace Firmware
                     //Need to find sweet spot for this time.
                     printer.WaitMicroseconds(3000);
                     var paramData = new byte[receivedHeader[1]];
-                    byte[] readParamByte = ReadParamBytes(receivedHeader, paramData);
+                    var readParamByte = ReadParamBytes(receivedHeader, paramData);
                     if (ByteArraysEquals(readParamByte, timeoutBytes))
                     {
                         printer.WriteSerialToHost(timeoutBytes, responseBytesLen);
@@ -219,7 +219,7 @@ namespace Firmware
                                     printer.MoveGalvos(xVoltage, yVoltage);
                                 }
                             }
-                            printer.WriteSerialToHost(successBytes, responseBytesLen);
+                            printer.WriteSerialToHost(readParamByte, responseBytesLen);
                         }
                         else
                         {

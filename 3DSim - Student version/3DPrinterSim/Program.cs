@@ -19,9 +19,9 @@ namespace PrinterSimulator
 {
     class PrintSim
     {
-        static byte[] successBytes = new byte[] { 0x53, 0x55, 0x43, 0x43, 0x45, 0x53, 0x53, 0};
-        static byte[] ACK = new byte[1] { 0xA5 };
-        static byte[] NACK = new byte[1] { 0xFF };
+        static byte[] successBytes = new byte[] { 0x53, 0x55, 0x43, 0x43, 0x45, 0x53, 0x53, 0 };
+        static byte[] ACK = new byte[] { 0xA5 };
+        static byte[] NACK = new byte[] { 0xFF };
         static byte[] SendHeaderAndReceive(PrinterControl printer, byte[] header)
         {
             //Console.WriteLine("SendingHeader");
@@ -42,14 +42,14 @@ namespace PrinterSimulator
             var responseRcvd = false;
             var responseArray = new byte[successBytes.Length];
             var readResponse = 0;
-            while (/*!responseRcvd*/ readResponse != successBytes.Length)
+            while (!responseRcvd/* readResponse != successBytes.Length*/)
             {
-                /*var */readResponse = printer.ReadSerialFromFirmware(responseArray, successBytes.Length);
-                //if (readResponse == successBytes.Length)
-                //{
-                //    //Console.WriteLine("Host done waiting: " + responseArray[0]);
-                //    responseRcvd = true;
-                //}
+                readResponse = printer.ReadSerialFromFirmware(responseArray, successBytes.Length);
+                if (readResponse == successBytes.Length)
+                {
+                    //Console.WriteLine("Host done waiting: " + responseArray[0]);
+                    responseRcvd = true;
+                }
             }
 
             return ByteArraysEquals(successBytes, responseArray);
@@ -75,8 +75,10 @@ namespace PrinterSimulator
         public static byte[] CombineBytes(byte[] first, byte[] second)
         {
             byte[] returnByte = new byte[first.Length + second.Length];
-            Buffer.BlockCopy(first, 0, returnByte, 0, first.Length);
-            Buffer.BlockCopy(second, 0, returnByte, first.Length, second.Length);
+            //Buffer.BlockCopy(first, 0, returnByte, 0, first.Length);
+            //Buffer.BlockCopy(second, 0, returnByte, first.Length, second.Length);
+            Array.Copy(first, 0, returnByte, 0, first.Length);
+            Array.Copy(second, 0, returnByte, first.Length, second.Length);
             return returnByte;
         }
 
@@ -140,7 +142,7 @@ namespace PrinterSimulator
             swTimer.Start();
 
             GCODE gcodelist = new GCODE(file);
-            int count = 0;
+            //int count = 0;
 
             bool zChanged;
             bool laserOnChanged;
@@ -158,9 +160,9 @@ namespace PrinterSimulator
 
                 SendCommandPkt(simCtl, gcodelist, zChanged, laserOnChanged);
 
-                count++;
+                //count++;
             }
-            Console.WriteLine(count);
+            //Console.WriteLine(count);
 
             swTimer.Stop();
             long elapsedMS = swTimer.ElapsedMilliseconds;
@@ -172,7 +174,7 @@ namespace PrinterSimulator
 
         public static void CommunicationsProtocol(PrinterControl simCtl, byte[] commandPkt)
         {
-            
+
             var complete = false;
             var header = new byte[4];
             do
@@ -181,7 +183,7 @@ namespace PrinterSimulator
                 var paramDataLen = commandPkt[1];
                 var commandParam = new byte[paramDataLen];
                 Buffer.BlockCopy(commandPkt, 4, commandParam, 0, paramDataLen);
-                var checksumBytes = CalculateChecksum((byte[])header, commandParam);
+                var checksumBytes = CalculateChecksum(header, commandParam);
                 header[2] = checksumBytes[0];
                 header[3] = checksumBytes[1];
                 var rcvHeader = SendHeaderAndReceive(simCtl, header);
@@ -261,6 +263,7 @@ namespace PrinterSimulator
                 {
                     case 'P': // Print
                         PrintFile(printer.GetPrinterSim());
+                        firmware.removeModel();
                         break;
 
                     case 'T': // Test menu

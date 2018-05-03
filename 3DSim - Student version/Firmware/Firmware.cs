@@ -20,7 +20,7 @@ namespace Firmware
         static int responseBytesLen = 8;
         static int minStepsPerSec = 16000;
         static int maxStepsPerSec = 160000;
-        static int maxStepperSpeed = 10; //Because the max amount of times the stepper can accelerate is 10 times
+        static int maxStepperSpeed = 100; //Because the max amount of times the stepper can accelerate is 10 times
 
         public void z_rail_init(/*PrinterControl printer*/)   //Moves Galvos to the top
         {
@@ -78,7 +78,7 @@ namespace Firmware
             else
             {
                 double secondsPerStep = 1.0 / (minStepsPerSec * stepperSpeed);
-                delay = 10000000 * secondsPerStep;
+                delay = (10000000 * secondsPerStep) + 100;
             }
             return Convert.ToInt32(delay);
         }
@@ -158,7 +158,7 @@ namespace Firmware
         {
 
             // Todo - receive incoming commands from the serial link and act on those commands by calling the low-level hardwarwe APIs, etc.
-            
+
 
             byte ACK = 0xA5;
             byte NACK = 0xFF;
@@ -172,28 +172,27 @@ namespace Firmware
                 var receivedHeader = new byte[4];
                 var ACKorNACK = new byte[1];
                 ReceiveHeaderAndSend(receivedHeader);
-                var ackBytesRead = 0;
+                var paramData = new byte[receivedHeader[1]];
                 printer.WaitMicroseconds(3000);
                 while (ACKorNACK[0] != ACK && ACKorNACK[0] != NACK)
                 {
-                    ackBytesRead = printer.ReadSerialFromHost(ACKorNACK, 1);
+                    printer.ReadSerialFromHost(ACKorNACK, 1);
                 }
                 if (ACKorNACK[0] == ACK)
                 {
-                    //Need to find sweet spot for this time.
-                    var paramData = new byte[receivedHeader[1]];
+                printer.WaitMicroseconds(3000);
                     //var readParamByte = ReadParamBytes(receivedHeader, paramData);
                     //var paramBytes = new byte[header[1]];
-                    var paramBytesRead = printer.ReadSerialFromHost(paramData, receivedHeader[1]);
-                    var responseByte = new byte[successBytes.Length];
-                    if (paramBytesRead != (byte)receivedHeader[1]/*ByteArraysEquals(readParamByte, timeoutBytes)*/)
+                    //var paramBytesRead = printer.ReadSerialFromHost(paramData, receivedHeader[1]);
+                    //var responseByte = new byte[successBytes.Length];
+                    if (printer.ReadSerialFromHost(paramData, receivedHeader[1]) != receivedHeader[1]/*ByteArraysEquals(readParamByte, timeoutBytes)*/)
                     {
                         printer.WriteSerialToHost(timeoutBytes, responseBytesLen);
                     }
                     else
                     {
                         //Console.WriteLine("Firmware: " + BitConverter.ToString(receivedHeader) + "|-|" + BitConverter.ToString(paramData));
-                        responseByte = successBytes;
+                        //responseByte = successBytes;
                         var calculatedChecksum = CalculateChecksum(receivedHeader, paramData);
                         if (receivedHeader[2] == calculatedChecksum[0] && receivedHeader[3] == calculatedChecksum[1])
                         {
@@ -290,6 +289,12 @@ namespace Firmware
         public void Stop()
         {
             fDone = true;
+        }
+
+        public void removeModel()
+        {
+            ToLimit();
+            printer.RemoveModelFromPrinter();
         }
 
         public void WaitForInit()
